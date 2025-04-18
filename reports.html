@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - ITNetgroup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">ITNetgroup</a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="index.html">Dashboard</a></li>
+                        <li><a href="assets.html">Activos</a></li>
+                        <li><a href="register.html">Registrar</a></li>
+                        <li><a href="reports.html" class="active">Reportes</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+                <h1>Reportes</h1>
+                <p>Genere reportes personalizados y expórtelos en diferentes formatos</p>
+            </div>
+
+            <!-- Opciones de Reporte -->
+            <div class="report-options-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Tipo de Reporte</h3>
+                    </div>
+                    <div class="card-content">
+                        <select name="report-type">
+                            <option value="assets-by-type" selected>Activos por Tipo</option>
+                            <option value="assets-by-location">Activos por Ubicación</option>
+                            <option value="warranty-expiration">Expiración de Garantías</option>
+                            <option value="software-licenses">Licencias de Software</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Formato de Exportación</h3>
+                    </div>
+                    <div class="card-content">
+                        <select name="export-format">
+                            <option value="pdf" selected>PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Generar Reporte</h3>
+                    </div>
+                    <div class="card-content">
+                        <a href="#" class="btn btn-primary btn-block"><i class="fas fa-download"></i> Exportar Reporte</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista Previa del Reporte -->
+            <div class="report-preview">
+                <div class="report-header">
+                    <h2>Activos por Tipo</h2>
+                    <div class="report-meta">
+                        <i class="fas fa-file-alt"></i> Vista previa del reporte
+                    </div>
+                </div>
+
+                <div class="report-content">
+                    <div class="report-grid">
+                        <div class="report-table">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de Activo</th>
+                                        <th>Cantidad</th>
+                                        <th>Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Hardware</td>
+                                        <td>142</td>
+                                        <td>38%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Software</td>
+                                        <td>87</td>
+                                        <td>27%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Redes</td>
+                                        <td>56</td>
+                                        <td>23%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Otros Activos TI</td>
+                                        <td>29</td>
+                                        <td>12%</td>
+                                    </tr>
+                                    <tr class="total-row">
+                                        <td>Total</td>
+                                        <td>120</td>
+                                        <td>100%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="report-chart">
+                            <div class="pie-chart-placeholder">
+                                <i class="fas fa-chart-pie"></i>
+                                <span class="sr-only">Gráfico de distribución de activos por tipo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>© 2025 ITNetgroup. Todos los derechos reservados.</p>
+                <p>Cartagena, Colombia</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

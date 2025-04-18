@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITNetgroup - Sistema de Gestión de Inventario</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">ITNetgroup</a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="index.html" class="active">Dashboard</a></li>
+                        <li><a href="assets.html">Activos</a></li>
+                        <li><a href="register.html">Registrar</a></li>
+                        <li><a href="reports.html">Reportes</a></li>
+                    </ul>
+                </nav>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="search" placeholder="Buscar activos...">
+                    </div>
+                    <a href="register.html" class="btn btn-primary">Nuevo Activo</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1>Sistema de Gestión de Inventario</h1>
+                <p>ITNetgroup Cartagena, Colombia</p>
+            </div>
+
+            <!-- Dashboard Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Hardware</h3>
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Software</h3>
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Redes</h3>
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3>Otros Activos TI</h3>
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Assets -->
+            <section class="section">
+                <h2>Activos Recientes</h2>
+                <div class="table-container">
+                    <table id="recent-assets" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Ubicación</th>
+                                <th>Usuario</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>A001</td>
+                                <td>Laptop Dell XPS 15</td>
+                                <td>Hardware</td>
+                                <td class="hide-mobile">DLL-XPS-2023-001</td>
+                                <td><span class="badge badge-assigned">Asignado</span></td>
+                                <td class="hide-mobile">Oficina Principal</td>
+                                <td class="hide-mobile">Carlos Mendoza</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>A002</td>
+                                <td>Microsoft Office 365</td>
+                                <td>Software</td>
+                                <td class="hide-mobile">MS-O365-2023-045</td>
+                                <td><span class="badge badge-available">Disponible</span></td>
+                                <td class="hide-mobile">N/A</td>
+                                <td class="hide-mobile">N/A</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>A003</td>
+                                <td>Switch Cisco Catalyst 2960</td>
+                                <td>Redes</td>
+                                <td class="hide-mobile">CSC-2960-2022-012</td>
+                                <td><span class="badge badge-maintenance">En mantenimiento</span></td>
+                                <td class="hide-mobile">Sala de Servidores</td>
+                                <td class="hide-mobile">N/A</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>A004</td>
+                                <td>Proyector Epson PowerLite</td>
+                                <td>Otros activos TI</td>
+                                <td class="hide-mobile">EPS-PL-2023-007</td>
+                                <td><span class="badge badge-available">Disponible</span></td>
+                                <td class="hide-mobile">Sala de Conferencias</td>
+                                <td class="hide-mobile">N/A</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>A005</td>
+                                <td>Impresora HP LaserJet Pro</td>
+                                <td>Hardware</td>
+                                <td class="hide-mobile">HP-LJP-2022-023</td>
+                                <td><span class="badge badge-assigned">Asignado</span></td>
+                                <td class="hide-mobile">Departamento de Finanzas</td>
+                                <td class="hide-mobile">María Rodríguez</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Quick Access -->
+            <div class="quick-access-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Registrar Activo</h3>
+                        <p>Añadir un nuevo activo al inventario</p>
+                    </div>
+                    <div class="card-content">
+                        <a href="register.html" class="btn btn-primary btn-block">Registrar</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Gestionar Activos</h3>
+                        <p>Ver y editar los activos existentes</p>
+                    </div>
+                    <div class="card-content">
+                        <a href="assets.html" class="btn btn-outline btn-block">Gestionar</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Generar Reportes</h3>
+                        <p>Exportar reportes en PDF o Excel</p>
+                    </div>
+                    <div class="card-content">
+                        <a href="reports.html" class="btn btn-outline btn-block">Reportes</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Detalles del Activo -->
+            <div class="modal" id="details-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Detalles del Activo</h3>
+                        <button class="close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="details-grid">
+                            <!-- Columna izquierda: Información básica -->
+                            <div class="details-column">
+                                <div class="detail-item">
+                                    <label>ID:</label>
+                                    <span id="detail-id"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Nombre:</label>
+                                    <span id="detail-nombre"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Tipo:</label>
+                                    <span id="detail-tipo"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Estado:</label>
+                                    <span id="detail-estado"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Ubicación:</label>
+                                    <span id="detail-ubicacion"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Asignado a:</label>
+                                    <span id="detail-asignado"></span>
+                                </div>
+                            </div>
+
+                            <!-- Columna derecha: Detalles técnicos -->
+                            <div class="details-column">
+                                <div class="detail-item">
+                                    <label>Serial:</label>
+                                    <span id="detail-serial"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Marca:</label>
+                                    <span id="detail-marca"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Modelo:</label>
+                                    <span id="detail-modelo"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Fecha de Compra:</label>
+                                    <span id="detail-fecha-compra"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Fecha de Registro:</label>
+                                    <span id="detail-fecha-registro"></span>
+                                </div>
+                            </div>
+
+                            <!-- Notas (ancho completo) -->
+                            <div class="detail-item full-width">
+                                <label>Notas:</label>
+                                <span id="detail-notas"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="close-modal btn">Cerrar</button>
+                        <button class="btn btn-primary" onclick="handleEdit(currentAssetId)">Editar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmación para Eliminar (Oculto por defecto) -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar eliminación</h3>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar este activo? Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline">Cancelar</button>
+                <button class="btn btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>© 2025 ITNetgroup. Todos los derechos reservados.</p>
+                <p>Cartagena, Colombia</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

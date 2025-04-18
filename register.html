@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Activo - ITNetgroup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">ITNetgroup</a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="index.html">Dashboard</a></li>
+                        <li><a href="assets.html">Activos</a></li>
+                        <li><a href="register.html" class="active">Registrar</a></li>
+                        <li><a href="reports.html">Reportes</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+                <h1>Registrar Nuevo Activo</h1>
+                <p>Complete el formulario para registrar un nuevo activo en el inventario</p>
+            </div>
+
+            <div class="card form-card">
+                <div class="card-header">
+                    <h2>Formulario de Registro</h2>
+                    <p>Seleccione el tipo de activo y complete la información requerida</p>
+                </div>
+                <div class="card-content">
+                    <form action="#" method="post" class="register-form">
+                        <div class="form-group">
+                            <label for="asset-type">Tipo de Activo</label>
+                            <select id="asset-type" name="asset-type" required>
+                                <option value="hardware" selected>Hardware</option>
+                                <option value="software">Software</option>
+                                <option value="network">Redes</option>
+                                <option value="other">Otros activos TI</option>
+                            </select>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="name">Nombre del Activo</label>
+                                <input type="text" id="name" name="name" placeholder="Ej. Laptop Dell XPS 15" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="serial">Número de Serie</label>
+                                <input type="text" id="serial" name="serial" placeholder="Ej. DLL-XPS-2023-001" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brand">Marca</label>
+                                <input type="text" id="brand" name="brand" placeholder="Ej. Dell" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="model">Modelo</label>
+                                <input type="text" id="model" name="model" placeholder="Ej. XPS 15 9500" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="purchase-date">Fecha de Compra</label>
+                                <input type="date" id="purchase-date" name="purchase-date" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="status">Estado</label>
+                                <select id="status" name="status" required>
+                                    <option value="disponible" selected>Disponible</option>
+                                    <option value="asignado">Asignado</option>
+                                    <option value="mantenimiento">En Mantenimiento</option>
+                                    <option value="fueradeuso">Fuera de Uso</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="location">Ubicación</label>
+                                <input type="text" id="location" name="location" placeholder="Ej. Oficina Principal">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="assigned-to">Asignado a</label>
+                                <input type="text" id="assigned-to" name="assigned-to" placeholder="Ej. Carlos Mendoza">
+                            </div>
+
+                            <!-- Campos específicos para Hardware -->
+                            <div class="form-group hardware-field">
+                                <label for="processor">Procesador</label>
+                                <input type="text" id="processor" name="processor" placeholder="Ej. Intel Core i7-10750H">
+                            </div>
+
+                            <div class="form-group hardware-field">
+                                <label for="ram">Memoria RAM</label>
+                                <input type="text" id="ram" name="ram" placeholder="Ej. 16GB DDR4">
+                            </div>
+
+                            <div class="form-group hardware-field">
+                                <label for="storage">Almacenamiento</label>
+                                <input type="text" id="storage" name="storage" placeholder="Ej. 512GB SSD">
+                            </div>
+
+                            <div class="form-group hardware-field">
+                                <label for="warranty">Garantía (meses)</label>
+                                <input type="number" id="warranty" name="warranty" placeholder="Ej. 24">
+                            </div>
+
+                            <!-- Campos específicos para Software (ocultos inicialmente) -->
+                            <div class="form-group software-field hidden">
+                                <label for="license-key">Clave de Licencia</label>
+                                <input type="text" id="license-key" name="license-key" placeholder="Ej. XXXX-XXXX-XXXX-XXXX">
+                            </div>
+
+                            <div class="form-group software-field hidden">
+                                <label for="expiration-date">Fecha de Expiración</label>
+                                <input type="date" id="expiration-date" name="expiration-date">
+                            </div>
+
+                            <div class="form-group software-field hidden">
+                                <label for="version">Versión</label>
+                                <input type="text" id="version" name="version" placeholder="Ej. 2023">
+                            </div>
+
+                            <div class="form-group software-field hidden">
+                                <label for="license-type">Tipo de Licencia</label>
+                                <select id="license-type" name="license-type">
+                                    <option value="perpetua">Perpetua</option>
+                                    <option value="suscripcion">Suscripción</option>
+                                    <option value="volumen">Licencia por Volumen</option>
+                                    <option value="opensource">Open Source</option>
+                                </select>
+                            </div>
+
+                            <!-- Campos específicos para Redes (ocultos inicialmente) -->
+                            <div class="form-group network-field hidden">
+                                <label for="ip-address">Dirección IP</label>
+                                <input type="text" id="ip-address" name="ip-address" placeholder="Ej. 192.168.1.1">
+                            </div>
+
+                            <div class="form-group network-field hidden">
+                                <label for="mac-address">Dirección MAC</label>
+                                <input type="text" id="mac-address" name="mac-address" placeholder="Ej. 00:1A:2B:3C:4D:5E">
+                            </div>
+
+                            <div class="form-group network-field hidden">
+                                <label for="network-type">Tipo de Red</label>
+                                <select id="network-type" name="network-type">
+                                    <option value="switch">Switch</option>
+                                    <option value="router">Router</option>
+                                    <option value="firewall">Firewall</option>
+                                    <option value="access_point">Access Point</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group network-field hidden">
+                                <label for="ports">Número de Puertos</label>
+                                <input type="number" id="ports" name="ports" placeholder="Ej. 24">
+                            </div>
+
+                            <!-- Campos específicos para Otros activos TI (ocultos inicialmente) -->
+                            <div class="form-group other-field hidden">
+                                <label for="category">Categoría</label>
+                                <select id="category" name="category">
+                                    <option value="impresora">Impresora</option>
+                                    <option value="escaner">Escáner</option>
+                                    <option value="proyector">Proyector</option>
+                                    <option value="telefono">Teléfono IP</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group other-field hidden">
+                                <label for="specifications">Especificaciones</label>
+                                <input type="text" id="specifications" name="specifications" placeholder="Ej. Resolución 1080p">
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="notes">Notas Adicionales</label>
+                            <textarea id="notes" name="notes" placeholder="Información adicional sobre el activo..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">Registrar Activo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>© 2025 ITNetgroup. Todos los derechos reservados.</p>
+                <p>Cartagena, Colombia</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

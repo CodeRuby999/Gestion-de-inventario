@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Activos - ITNetgroup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">ITNetgroup</a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="index.html">Dashboard</a></li>
+                        <li><a href="assets.html" class="active">Activos</a></li>
+                        <li><a href="register.html">Registrar</a></li>
+                        <li><a href="reports.html">Reportes</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+                <h1>Gestión de Activos</h1>
+                <p>Visualice, busque y administre todos los activos del inventario</p>
+            </div>
+
+            <!-- Filtros y Búsqueda -->
+            <div class="filters-container">
+                <div class="search-container">
+                    <div class="search-box full-width">
+                        <i class="fas fa-search"></i>
+                        <input type="search" id="search-input" placeholder="Buscar por nombre o número de serie...">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <div class="filter-select">
+                        <select id="type-filter" name="type-filter">
+                            <option value="all">Todos los tipos</option>
+                            <option value="hardware">Hardware</option>
+                            <option value="software">Software</option>
+                            <option value="network">Redes</option>
+                            <option value="other">Otros activos TI</option>
+                        </select>
+                    </div>
+                    <div class="filter-select">
+                        <select name="status-filter">
+                            <option value="all">Todos los estados</option>
+                            <option value="available">Disponible</option>
+                            <option value="assigned">Asignado</option>
+                            <option value="maintenance">En mantenimiento</option>
+                            <option value="out-of-use">Fuera de uso</option>
+                        </select>
+                    </div>
+                    <a href="#" class="btn btn-outline"><i class="fas fa-download"></i> <span class="hide-mobile">Exportar</span></a>
+                    <a href="register.html" class="btn btn-primary">Nuevo Activo</a>
+                </div>
+            </div>
+
+            <!-- Tabla de Activos -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th class="hide-mobile">Serial</th>
+                            <th>Estado</th>
+                            <th class="hide-mobile">Ubicación</th>
+                            <th class="hide-mobile">Usuario</th>
+                            <th class="hide-mobile">Última Actualización</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los activos se cargarán dinámicamente desde JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal de Confirmación para Eliminar (Oculto por defecto) -->
+            <div class="modal" id="delete-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Confirmar eliminación</h3>
+                    </div>
+                    <div class="modal-body">
+                        <p>¿Está seguro de que desea eliminar este activo? Esta acción no se puede deshacer.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline">Cancelar</button>
+                        <button class="btn btn-danger">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Detalles del Activo -->
+            <div class="modal" id="details-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Detalles del Activo</h3>
+                        <button class="close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="details-grid">
+                            <!-- Columna izquierda: Información básica -->
+                            <div class="details-column">
+                                <div class="detail-item">
+                                    <label>ID:</label>
+                                    <span id="detail-id"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Nombre:</label>
+                                    <span id="detail-nombre"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Tipo:</label>
+                                    <span id="detail-tipo"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Estado:</label>
+                                    <span id="detail-estado"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Ubicación:</label>
+                                    <span id="detail-ubicacion"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Asignado a:</label>
+                                    <span id="detail-asignado"></span>
+                                </div>
+                            </div>
+
+                            <!-- Columna derecha: Detalles técnicos -->
+                            <div class="details-column">
+                                <div class="detail-item">
+                                    <label>Serial:</label>
+                                    <span id="detail-serial"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Marca:</label>
+                                    <span id="detail-marca"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Modelo:</label>
+                                    <span id="detail-modelo"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Fecha de Compra:</label>
+                                    <span id="detail-fecha-compra"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Fecha de Registro:</label>
+                                    <span id="detail-fecha-registro"></span>
+                                </div>
+                            </div>
+
+                            <!-- Notas (ancho completo) -->
+                            <div class="detail-item full-width">
+                                <label>Notas:</label>
+                                <span id="detail-notas"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="close-modal btn">Cerrar</button>
+                        <button class="btn btn-primary" onclick="handleEdit(currentAssetId)">Editar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>© 2025 ITNetgroup. Todos los derechos reservados.</p>
+                <p>Cartagena, Colombia</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

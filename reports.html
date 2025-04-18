@@ -3,148 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes - ITNetgroup</title>
+    <title>Reportes - Sistema de Gestión de Inventario</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="script.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <a href="index.html">ITNetgroup</a>
-                </div>
-                <nav class="main-nav">
-                    <ul>
-                        <li><a href="index.html">Dashboard</a></li>
-                        <li><a href="assets.html">Activos</a></li>
-                        <li><a href="register.html">Registrar</a></li>
-                        <li><a href="reports.html" class="active">Reportes</a></li>
-                    </ul>
-                </nav>
+        <div class="container header-content">
+            <div class="logo">
+                <a href="index.html">Sistema de Gestión de Inventario</a>
             </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="assets.html">Gestión de Activos</a></li>
+                    <li><a href="register.html">Registro de Activos</a></li>
+                    <li><a href="reports.html" class="active">Reportes</a></li>
+                </ul>
+            </nav>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main">
         <div class="container">
             <div class="page-header">
-                <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
                 <h1>Reportes</h1>
-                <p>Genere reportes personalizados y expórtelos en diferentes formatos</p>
+                <p>Genera y visualiza reportes sobre el estado de los activos.</p>
             </div>
 
-            <!-- Opciones de Reporte -->
             <div class="report-options-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Tipo de Reporte</h3>
-                    </div>
-                    <div class="card-content">
-                        <select name="report-type">
-                            <option value="assets-by-type" selected>Activos por Tipo</option>
-                            <option value="assets-by-location">Activos por Ubicación</option>
-                            <option value="warranty-expiration">Expiración de Garantías</option>
-                            <option value="software-licenses">Licencias de Software</option>
-                        </select>
-                    </div>
+                <div class="report-card">
+                    <h3>Reporte por Estado</h3>
+                    <p>Visualiza la distribución de activos según su estado actual y obtén estadísticas detalladas sobre su disponibilidad.</p>
+                    <button onclick="generateStatusReport()" class="btn">Generar Reporte</button>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Formato de Exportación</h3>
-                    </div>
-                    <div class="card-content">
-                        <select name="export-format">
-                            <option value="pdf" selected>PDF</option>
-                            <option value="excel">Excel</option>
-                            <option value="csv">CSV</option>
-                        </select>
-                    </div>
+                <div class="report-card">
+                    <h3>Reporte por Tipo</h3>
+                    <p>Analiza la composición de tu inventario por tipo de activo y descubre la distribución de tus recursos.</p>
+                    <button onclick="generateTypeReport()" class="btn">Generar Reporte</button>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Generar Reporte</h3>
-                    </div>
-                    <div class="card-content">
-                        <a href="#" class="btn btn-primary btn-block"><i class="fas fa-download"></i> Exportar Reporte</a>
-                    </div>
+                <div class="report-card">
+                    <h3>Reporte de Asignaciones</h3>
+                    <p>Obtén una visión clara de los activos asignados y disponibles para optimizar la gestión de recursos.</p>
+                    <button onclick="generateAssignmentReport()" class="btn">Generar Reporte</button>
                 </div>
             </div>
 
-            <!-- Vista Previa del Reporte -->
-            <div class="report-preview">
-                <div class="report-header">
-                    <h2>Activos por Tipo</h2>
-                    <div class="report-meta">
-                        <i class="fas fa-file-alt"></i> Vista previa del reporte
-                    </div>
+            <div id="reportContainer" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3 id="reportTitle">Resultado del Reporte</h3>
                 </div>
-
-                <div class="report-content">
-                    <div class="report-grid">
-                        <div class="report-table">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Tipo de Activo</th>
-                                        <th>Cantidad</th>
-                                        <th>Porcentaje</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Hardware</td>
-                                        <td>142</td>
-                                        <td>38%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Software</td>
-                                        <td>87</td>
-                                        <td>27%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Redes</td>
-                                        <td>56</td>
-                                        <td>23%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Otros Activos TI</td>
-                                        <td>29</td>
-                                        <td>12%</td>
-                                    </tr>
-                                    <tr class="total-row">
-                                        <td>Total</td>
-                                        <td>120</td>
-                                        <td>100%</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="report-chart">
-                            <div class="pie-chart-placeholder">
-                                <i class="fas fa-chart-pie"></i>
-                                <span class="sr-only">Gráfico de distribución de activos por tipo</span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="card-content">
+                    <div id="reportContent"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <p>© 2025 ITNetgroup. Todos los derechos reservados.</p>
-                <p>Cartagena, Colombia</p>
+                <p>&copy; 2024 Sistema de Gestión de Inventario. Todos los derechos reservados.</p>
             </div>
         </div>
     </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>

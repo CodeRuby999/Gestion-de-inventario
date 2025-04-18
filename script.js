@@ -123,6 +123,196 @@ function handleRegister() {
     window.location.href = 'register.html';
 }
 
+// Función para normalizar el estado
+function normalizeState(estado) {
+    if (!estado) return 'disponible';
+    
+    const estadoLower = estado.toLowerCase().trim();
+    switch (estadoLower) {
+        case 'disponible':
+        case 'available':
+            return 'disponible';
+        case 'asignado':
+        case 'assigned':
+            return 'asignado';
+        case 'mantenimiento':
+        case 'en mantenimiento':
+        case 'maintenance':
+            return 'mantenimiento';
+        case 'fuera de uso':
+        case 'fueradeuso':
+        case 'out-of-use':
+            return 'fueradeuso';
+        default:
+            return 'disponible';
+    }
+}
+
+// Funciones de reportes
+function generateStatusReport() {
+    const assets = JSON.parse(localStorage.getItem('assets')) || [];
+    const statusCount = {};
+
+    // Contar activos por estado
+    assets.forEach(asset => {
+        const estado = asset.estado || 'No definido';
+        statusCount[estado] = (statusCount[estado] || 0) + 1;
+    });
+
+    // Generar tabla HTML
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Estado</th>
+                    <th>Cantidad</th>
+                    <th>Porcentaje</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    const total = assets.length;
+    for (const estado in statusCount) {
+        const count = statusCount[estado];
+        const percentage = ((count / total) * 100).toFixed(1);
+        html += `
+            <tr>
+                <td><span class="${getBadgeClass(estado)}">${estado}</span></td>
+                <td>${count}</td>
+                <td>${percentage}%</td>
+            </tr>
+        `;
+    }
+
+    html += `
+            <tr class="total-row">
+                <td>Total</td>
+                <td>${total}</td>
+                <td>100%</td>
+            </tr>
+        </tbody>
+    </table>
+    `;
+
+    showReport('Reporte por Estado', html);
+}
+
+function generateTypeReport() {
+    const assets = JSON.parse(localStorage.getItem('assets')) || [];
+    const typeCount = {};
+
+    // Contar activos por tipo
+    assets.forEach(asset => {
+        const tipo = asset.tipo || 'No definido';
+        typeCount[tipo] = (typeCount[tipo] || 0) + 1;
+    });
+
+    // Generar tabla HTML
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Porcentaje</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    const total = assets.length;
+    for (const tipo in typeCount) {
+        const count = typeCount[tipo];
+        const percentage = ((count / total) * 100).toFixed(1);
+        html += `
+            <tr>
+                <td>${tipo}</td>
+                <td>${count}</td>
+                <td>${percentage}%</td>
+            </tr>
+        `;
+    }
+
+    html += `
+            <tr class="total-row">
+                <td>Total</td>
+                <td>${total}</td>
+                <td>100%</td>
+            </tr>
+        </tbody>
+    </table>
+    `;
+
+    showReport('Reporte por Tipo', html);
+}
+
+function generateAssignmentReport() {
+    const assets = JSON.parse(localStorage.getItem('assets')) || [];
+    const assignmentCount = {
+        'Asignados': 0,
+        'No Asignados': 0
+    };
+
+    // Contar activos asignados y no asignados basado en el estado
+    assets.forEach(asset => {
+        const estado = (asset.estado || '').toLowerCase();
+        if (estado === 'asignado') {
+            assignmentCount['Asignados']++;
+        } else if (estado === 'disponible' || estado === 'fueradeuso') {
+            assignmentCount['No Asignados']++;
+        }
+    });
+
+    // Generar tabla HTML
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Estado de Asignación</th>
+                    <th>Cantidad</th>
+                    <th>Porcentaje</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    const total = assets.length;
+    for (const status in assignmentCount) {
+        const count = assignmentCount[status];
+        const percentage = ((count / total) * 100).toFixed(1);
+        html += `
+            <tr>
+                <td>${status}</td>
+                <td>${count}</td>
+                <td>${percentage}%</td>
+            </tr>
+        `;
+    }
+
+    html += `
+            <tr class="total-row">
+                <td>Total</td>
+                <td>${total}</td>
+                <td>100%</td>
+            </tr>
+        </tbody>
+    </table>
+    `;
+
+    showReport('Reporte de Asignaciones', html);
+}
+
+function showReport(title, content) {
+    const container = document.getElementById('reportContainer');
+    const titleElement = document.getElementById('reportTitle');
+    const contentElement = document.getElementById('reportContent');
+
+    titleElement.textContent = title;
+    contentElement.innerHTML = content;
+    container.style.display = 'block';
+}
+
 // Función para manejar el envío del formulario de registro
 async function handleFormSubmit(event) {
     event.preventDefault();
@@ -141,7 +331,7 @@ async function handleFormSubmit(event) {
         fechaCompra: formData.get('purchase-date'),
         fechaRegistro: existingId ? formData.get('fecha-registro') : new Date().toISOString(),
         ultimaActualizacion: new Date().toISOString(),
-        estado: formData.get('status'),
+        estado: normalizeState(formData.get('status')),
         ubicacion: formData.get('location'),
         asignadoA: formData.get('assigned-to'),
         notas: formData.get('notes')
@@ -216,20 +406,19 @@ async function fetchAssets() {
 
 // Función para obtener la clase CSS del badge según el estado
 function getBadgeClass(estado) {
-    const estadoLower = estado.toLowerCase().trim();
+    if (!estado) return 'badge badge-secondary';
+    const estadoLower = estado.toLowerCase();
     switch (estadoLower) {
         case 'disponible':
-            return 'available'; // verde
+            return 'badge badge-success';
         case 'asignado':
-            return 'assigned';  // azul
-        case 'fueradeuso':
-        case 'fuera de uso':
-            return 'fuera-de-uso';  // rojo
+            return 'badge badge-info';
         case 'mantenimiento':
-        case 'en mantenimiento':
-            return 'maintenance'; // naranja
+            return 'badge badge-warning';
+        case 'fueradeuso':
+            return 'badge badge-danger';
         default:
-            return 'secondary'; // gris por defecto
+            return 'badge badge-secondary';
     }
 }
 
@@ -288,8 +477,8 @@ function closeDetailsModal() {
 }
 
 // Función para actualizar la tabla de activos
-function updateAssetsTable(assets, searchTerm = '', selectedType = '', isManagePage = false) {
-    console.log('Actualizando tabla con:', { assets, searchTerm, selectedType, isManagePage }); // Para depuración
+function updateAssetsTable(assets, searchTerm = '', selectedType = '', selectedStatus = '', isManagePage = false) {
+    console.log('Actualizando tabla con:', { assets, searchTerm, selectedType, selectedStatus, isManagePage }); // Para depuración
 
     // Determinar qué tabla actualizar
     let tbody;
@@ -329,22 +518,34 @@ function updateAssetsTable(assets, searchTerm = '', selectedType = '', isManageP
     // Filtrar activos
     let filteredAssets = assets;
 
-    // Filtrar por término de búsqueda
-    if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        filteredAssets = filteredAssets.filter(asset => 
-            (asset.nombre && asset.nombre.toLowerCase().includes(searchLower)) ||
-            (asset.tipo && asset.tipo.toLowerCase().includes(searchLower)) ||
-            (asset.serial && asset.serial.toLowerCase().includes(searchLower))
+    // Aplicar todos los filtros en una sola pasada
+    filteredAssets = filteredAssets.filter(asset => {
+        // Verificar el término de búsqueda
+        const searchMatch = !searchTerm || (
+            (asset.nombre && asset.nombre.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (asset.tipo && asset.tipo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (asset.serial && asset.serial.toLowerCase().includes(searchTerm.toLowerCase()))
         );
-    }
 
-    // Filtrar por tipo si está seleccionado
-    if (selectedType && selectedType !== 'todos') {
-        filteredAssets = filteredAssets.filter(asset => 
-            asset.tipo && asset.tipo.toLowerCase() === selectedType.toLowerCase()
-        );
-    }
+        // Verificar el tipo
+        const typeMatch = !selectedType || selectedType === 'all' || 
+            (asset.tipo && asset.tipo.toLowerCase() === selectedType.toLowerCase());
+
+        // Verificar el estado - asegurarse de que ambos valores estén en minúsculas
+        const statusMatch = !selectedStatus || selectedStatus === 'all' || 
+            (asset.estado && asset.estado.toLowerCase() === selectedStatus.toLowerCase());
+
+        // Registrar cada filtrado para depuración
+        if (!statusMatch && selectedStatus !== 'all') {
+            console.log('Estado no coincide:', {
+                'estado del activo': asset.estado,
+                'estado seleccionado': selectedStatus,
+                'coincidencia': statusMatch
+            });
+        }
+
+        return searchMatch && typeMatch && statusMatch;
+    });
 
     console.log('Activos filtrados:', filteredAssets); // Para depuración
 
@@ -363,7 +564,25 @@ function updateAssetsTable(assets, searchTerm = '', selectedType = '', isManageP
         const badgeClass = getBadgeClass(asset.estado);
         const row = document.createElement('tr');
         // Formatear el estado para mostrar
-        const estadoMostrado = asset.estado === 'fueradeuso' ? 'Fuera de Uso' : asset.estado;
+        let estadoMostrado = 'N/A';
+        if (asset.estado) {
+            switch (asset.estado.toLowerCase()) {
+                case 'disponible':
+                    estadoMostrado = 'Disponible';
+                    break;
+                case 'asignado':
+                    estadoMostrado = 'Asignado';
+                    break;
+                case 'mantenimiento':
+                    estadoMostrado = 'En Mantenimiento';
+                    break;
+                case 'fueradeuso':
+                    estadoMostrado = 'Fuera de Uso';
+                    break;
+                default:
+                    estadoMostrado = asset.estado;
+            }
+        }
 
         // Formatear la fecha de última actualización
         let fechaActualizacion = 'N/A';
@@ -397,25 +616,28 @@ function updateAssetsTable(assets, searchTerm = '', selectedType = '', isManageP
         if (isManagePage) {
             row.innerHTML = `
                 <td>${asset.id}</td>
-                <td>${asset.nombre}</td>
-                <td>${asset.tipo}</td>
-                <td class="hide-mobile">${asset.serial}</td>
-                <td><span class="badge badge-${badgeClass}">${estadoMostrado || 'N/A'}</span></td>
-                <td class="hide-mobile">${asset.ubicacion || 'N/A'}</td>
-                <td class="hide-mobile">${asset.asignadoA || 'N/A'}</td>
-                <td class="hide-mobile">${fechaActualizacion}</td>
+                <td>${asset.nombre || 'N/A'}</td>
+                <td>${asset.tipo || 'N/A'}</td>
+                <td>${asset.serial || 'N/A'}</td>
+                <td><span class="${getBadgeClass(asset.estado)}">${estadoMostrado}</span></td>
+                <td>${asset.ubicacion || 'N/A'}</td>
+                <td>${asset.asignadoA || 'N/A'}</td>
+                <td>${fechaActualizacion}</td>
                 <td>
-                    <div class="action-buttons">
-                        <a href="#" class="btn-icon" onclick="handleEdit('${asset.id}')"><i class="fas fa-edit"></i></a>
-                        <a href="#" class="btn-icon delete" onclick="handleDelete('${asset.id}')"><i class="fas fa-trash"></i></a>
+                    <div class="action-buttons text-center">
+                        <button onclick="handleEdit('${asset.id}')" class="btn-icon edit" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="handleDelete('${asset.id}')" class="btn-icon delete" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
-                </td>
-            `;
+                </td>`;
         } else {
             row.innerHTML = `
                 <td>${asset.nombre}</td>
                 <td>${asset.tipo}</td>
-                <td><span class="badge badge-${badgeClass}">${estadoMostrado || 'N/A'}</span></td>
+                <td><span class="${getBadgeClass(asset.estado)}">${estadoMostrado}</span></td>
                 <td>${asset.ubicacion || 'N/A'}</td>
                 <td>${asset.asignadoA || 'N/A'}</td>
                 <td>
@@ -470,13 +692,40 @@ function generateAssetId() {
     return `${prefix}${timestamp}`;
 }
 
+// Función para aplicar todos los filtros
+async function applyFilters() {
+    try {
+        const searchInput = document.querySelector('#search-input');
+        const typeFilter = document.querySelector('#type-filter');
+        const statusFilter = document.querySelector('#status-filter');
+
+        const searchTerm = searchInput ? searchInput.value : '';
+        const selectedType = typeFilter ? typeFilter.value : '';
+        const selectedStatus = statusFilter ? statusFilter.value : '';
+
+        console.log('Aplicando filtros:', {
+            searchTerm,
+            selectedType,
+            selectedStatus
+        });
+
+        const assets = await fetchAssets();
+        console.log('Assets antes de filtrar:', assets);
+
+        updateAssetsTable(assets, searchTerm, selectedType, selectedStatus, true);
+    } catch (error) {
+        console.error('Error al aplicar filtros:', error);
+    }
+}
+
 // Función para manejar el filtro por tipo
-async function handleTypeFilter(event) {
-    const selectedType = event.target.value;
-    const searchInput = document.querySelector('.search-box input');
-    const searchTerm = searchInput ? searchInput.value : '';
-    const assets = await fetchAssets();
-    updateAssetsTable(assets, searchTerm, selectedType, true);
+function handleTypeFilter(event) {
+    applyFilters();
+}
+
+// Función para manejar el filtro por estado
+function handleStatusFilter(event) {
+    applyFilters();
 }
 
 // Función para manejar la gestión de activos
@@ -633,10 +882,8 @@ async function updateStatsCards() {
 async function handleSearch(event) {
     const searchTerm = event.target.value;
     const assets = await fetchAssets();
-    const isManagePage = window.location.pathname.includes('manage.html');
-    const typeFilter = document.querySelector('#type-filter');
-    const selectedType = typeFilter ? typeFilter.value : '';
-    updateAssetsTable(assets, searchTerm, selectedType, isManagePage);
+    const isManagePage = window.location.pathname.includes('assets.html');
+    updateAssetsTable(assets, searchTerm, '', '', isManagePage);
 }
 
 // Inicializar los eventos cuando el DOM esté cargado
@@ -689,14 +936,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         const isManagePage = window.location.pathname.includes('assets.html');
         // Si estamos en la página de gestión
         if (isManagePage) {
+            // Configurar event listeners para los filtros
             const typeFilter = document.querySelector('#type-filter');
+            const statusFilter = document.querySelector('#status-filter');
+            const searchInput = document.querySelector('#search-input');
+
+            // Remover event listeners existentes para evitar duplicados
             if (typeFilter) {
+                typeFilter.removeEventListener('change', handleTypeFilter);
                 typeFilter.addEventListener('change', handleTypeFilter);
             }
-            updateAssetsTable(assets, '', '', true);
+
+            if (statusFilter) {
+                statusFilter.removeEventListener('change', handleStatusFilter);
+                statusFilter.addEventListener('change', handleStatusFilter);
+            }
+
+            if (searchInput) {
+                searchInput.removeEventListener('input', handleSearch);
+                searchInput.addEventListener('input', handleSearch);
+            }
+
+            console.log('Event listeners configurados');
+            updateAssetsTable(assets, '', '', '', true);
         }
         // Si estamos en la página principal
         else if (document.querySelector('.stats-grid')) {
+            const searchInput = document.querySelector('.search-box input');
+            if (searchInput) {
+                searchInput.removeEventListener('input', handleSearch);
+                searchInput.addEventListener('input', handleSearch);
+            }
             updateAssetsTable(assets, '', '', false);
             await updateStatsCards();
         }

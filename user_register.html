@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Usuario</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Registrar Usuario</h2>
+    <form id="registerForm">
+      <label for="username">Usuario:</label>
+      <input type="text" id="username" required>
+
+      <label for="password">Contraseña:</label>
+      <input type="password" id="password" required>
+
+      <label for="role">Rol:</label>
+      <select id="role" required>
+        <option value="admin">Administrador</option>
+        <option value="empleado">Empleado</option>
+        <option value="consulta">Consulta</option>
+      </select>
+
+      <button type="submit">Registrar</button>
+    </form>
+    <p id="registerMessage" style="color: green;"></p>
+    <p><a href="login.html">Volver al login</a></p>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Solo los administradores pueden acceder
+    protectPage(['admin']);
+  </script>
+</body>
+</html>

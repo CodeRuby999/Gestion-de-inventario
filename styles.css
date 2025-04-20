@@ -1,3 +1,53 @@
+/* Estilos para login y registro */
+.container {
+  max-width: 400px;
+  margin: 100px auto;
+  padding: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+}
+
+.container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.container form label {
+  display: block;
+  margin-top: 10px;
+}
+
+.container form input,
+.container form select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.container form button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px;
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.container form button:hover {
+  background-color: #34495e;
+}
+
+.container p {
+  text-align: center;
+  margin-top: 15px;
+}
+
 /* Reset y estilos base */
 * {
     margin: 0;

@@ -1,4 +1,88 @@
-// Función para manejar la eliminación de activos
+// ------------------- Gestión de Usuarios ------------------- //
+
+// Guardar un nuevo usuario
+function registerUser(username, password, role) {
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    if (users.find(user => user.username === username)) {
+      return { success: false, message: 'El usuario ya existe.' };
+    }
+    users.push({ username, password, role });
+    localStorage.setItem('users', JSON.stringify(users));
+    return { success: true, message: 'Usuario registrado con éxito.' };
+  }
+  
+  // Autenticación de usuario
+  function loginUser(username, password) {
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      return { success: true, user };
+    }
+    return { success: false, message: 'Credenciales incorrectas.' };
+  }
+  
+  // Obtener usuario logueado
+  function getCurrentUser() {
+    return JSON.parse(localStorage.getItem('currentUser'));
+  }
+  
+  // Cerrar sesión
+  function logout() {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'login.html';
+  }
+  
+  // Proteger páginas según sesión y rol
+  function protectPage(allowedRoles = []) {
+    const user = getCurrentUser();
+    if (!user || (allowedRoles.length && !allowedRoles.includes(user.role))) {
+      alert('Acceso no autorizado. Redirigiendo al login.');
+      window.location.href = 'login.html';
+    }
+  }
+  
+  // ------------------- Eventos ------------------- //
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    // Login
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const result = loginUser(username, password);
+        const msg = document.getElementById('loginMessage');
+        if (result.success) {
+          window.location.href = 'index.html';
+        } else {
+          msg.textContent = result.message;
+        }
+      });
+    }
+  
+    // Registro
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+      registerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role').value;
+        const result = registerUser(username, password, role);
+        const msg = document.getElementById('registerMessage');
+        msg.style.color = result.success ? 'green' : 'red';
+        msg.textContent = result.message;
+        if (result.success) {
+          registerForm.reset();
+        }
+      });
+    }
+  });
+  
+  // ------------------- Fin gestión usuarios ------------------- //
+  // Función para manejar la eliminación de activos
 async function handleDelete(assetId) {
     const modal = document.getElementById('delete-modal');
     const confirmButton = modal.querySelector('.btn-danger');

@@ -1,0 +1,47 @@
+/* Estilo específico para arreglar el padding en la columna ID */
+
+/* Targeting directo para la primera columna de cada tabla */
+.data-table td:first-child,
+.data-table tbody tr td:first-child,
+#recent-assets td:first-child,
+tr.clickable-row td:first-child {
+    padding-left: 30px !important;
+}
+
+/* Estilo específico para columnas con ID */
+td[data-column="id"],
+td[data-id],
+td:nth-child(1) {
+    padding-left: 30px !important;
+}
+
+/* Estilos inline extra */
+table tr td:first-of-type {
+    padding-left: 30px !important;
+}
+
+/* Aplica a todas las tablas */
+table td:first-child {
+    padding-left: 30px !important;
+}
+
+/* Ajuste de alineación para encabezados de columnas */
+table th {
+    padding-left: 30px !important;
+    text-align: left !important;
+}
+
+/* Ajuste específico para la primera columna de encabezados */
+table th:first-child {
+    padding-left: 30px !important;
+}
+
+/* Asegurar que las celdas de datos y encabezados estén alineados */
+table td, table th {
+    padding-right: 15px !important;
+}
+
+/* Excepción para la columna de acciones */
+table th:last-child {
+    text-align: center !important;
+}

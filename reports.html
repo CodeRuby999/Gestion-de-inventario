@@ -35,19 +35,19 @@
                 <div class="report-card">
                     <h3>Reporte por Estado</h3>
                     <p>Visualiza la distribución de activos según su estado actual y obtén estadísticas detalladas sobre su disponibilidad.</p>
-                    <button onclick="generateStatusReport()" class="btn">Generar Reporte</button>
+                    <button id="btn-status-report" class="btn">Generar Reporte</button>
                 </div>
 
                 <div class="report-card">
                     <h3>Reporte por Tipo</h3>
                     <p>Analiza la composición de tu inventario por tipo de activo y descubre la distribución de tus recursos.</p>
-                    <button onclick="generateTypeReport()" class="btn">Generar Reporte</button>
+                    <button id="btn-type-report" class="btn">Generar Reporte</button>
                 </div>
 
                 <div class="report-card">
                     <h3>Reporte de Asignaciones</h3>
                     <p>Obtén una visión clara de los activos asignados y disponibles para optimizar la gestión de recursos.</p>
-                    <button onclick="generateAssignmentReport()" class="btn">Generar Reporte</button>
+                    <button id="btn-assignment-report" class="btn">Generar Reporte</button>
                 </div>
             </div>
 
@@ -70,6 +70,59 @@
         </div>
     </footer>
 
+    <!-- Firebase App y servicios -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <!-- Configuración centralizada de Firebase -->
+    <script src="firebase-config.js"></script>
+    
     <script src="script.js"></script>
+    <script>
+      console.log('[UI] Script de listeners cargado');
+      // Protección de autenticación con Firebase Auth (fuera de DOMContentLoaded para evitar parpadeos)
+      firebase.auth().onAuthStateChanged(function(user) {
+        console.log('[UI] Valor de user en onAuthStateChanged:', user);
+        if (!user) {
+          window.location.href = 'login.html';
+          return;
+        }
+        // Mostrar el rol del usuario si existe (opcional)
+        const userRoleElement = document.getElementById('user-role');
+        if (userRoleElement) {
+          userRoleElement.textContent = user.displayName || 'Usuario';
+        }
+        // Lógica de reportes solo si autenticado
+        function conectarBotonesReportes() {
+          console.log('[UI] Conectando listeners de botones de reportes');
+          var btnStatus = document.getElementById('btn-status-report');
+          var btnType = document.getElementById('btn-type-report');
+          var btnAssign = document.getElementById('btn-assignment-report');
+          if (!btnStatus || !btnType || !btnAssign) {
+            console.error('[UI] No se encontraron los botones de reporte');
+          }
+          btnStatus && btnStatus.addEventListener('click', function() {
+            console.log('[UI] Click en btn-status-report');
+            if (window.generateStatusReport) window.generateStatusReport();
+            else alert('No se encontró la función generateStatusReport');
+          });
+          btnType && btnType.addEventListener('click', function() {
+            console.log('[UI] Click en btn-type-report');
+            if (window.generateTypeReport) window.generateTypeReport();
+            else alert('No se encontró la función generateTypeReport');
+          });
+          btnAssign && btnAssign.addEventListener('click', function() {
+            console.log('[UI] Click en btn-assignment-report');
+            if (window.generateAssignmentReport) window.generateAssignmentReport();
+            else alert('No se encontró la función generateAssignmentReport');
+          });
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', conectarBotonesReportes);
+        } else {
+          conectarBotonesReportes();
+        }
+      });
+    </script>
 </body>
 </html>

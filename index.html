@@ -5,8 +5,231 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ITNetgroup - Sistema de Gestión de Inventario</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="reset-hover.css">
+    <link rel="stylesheet" href="fix-padding.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBulqDJunx7mkijQVjTh_WZdMfS9yQGfxI",
+            authDomain: "gestion-de-activos-60f8c.firebaseapp.com",
+            projectId: "gestion-de-activos-60f8c",
+            storageBucket: "gestion-de-activos-60f8c.firebasestorage.app",
+            messagingSenderId: "1024745036309",
+            appId: "1:1024745036309:web:0bfd76401887e548ac8c1c",
+            measurementId: "G-HHRJK85QFM"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Solo verificar autenticación y configurar el botón de cerrar sesión
+        document.addEventListener('DOMContentLoaded', function() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (!user) {
+                    if (!window.location.pathname.endsWith('login.html')) {
+                        window.location.href = 'login.html';
+                    }
+                    return;
+                }
+                // Mostrar el rol del usuario (si está en displayName)
+                const userRoleElement = document.getElementById('user-role');
+                if (userRoleElement) {
+                    userRoleElement.textContent = user.displayName || 'Usuario';
+                }
+                // Configurar cerrar sesión con Firebase Auth
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.onclick = function() {
+                        if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                            firebase.auth().signOut().then(function() {
+                                window.location.href = 'login.html';
+                            });
+                        }
+                    };
+                }
+            });
+        });
+    </script>
     <script src="script.js"></script>
+    <script src="hover-fix.js"></script>
+    
+    <!-- Script específico para el dashboard -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Cargar activos desde Firebase
+                const db = firebase.firestore();
+                const assetsSnapshot = await db.collection('assets').get();
+                let assets = [];
+                
+                if (!assetsSnapshot.empty) {
+                    const assetsContainer = document.querySelector('.recent-assets-list');
+                    if (assetsContainer) {
+                        // Limpiar contenedor
+                        assetsContainer.innerHTML = '';
+                        
+                        // Obtener activos y ordenarlos por fecha de registro (más recientes primero)
+                        const assets = [];
+                        assetsSnapshot.forEach(doc => {
+                            assets.push(doc.data());
+                        });
+                        
+                        // Ordenar por fecha de registro (más recientes primero)
+                        assets.sort((a, b) => {
+                            return new Date(b.fechaRegistro) - new Date(a.fechaRegistro);
+                        });
+                        
+                        // Mostrar solo los 5 más recientes
+                        const recentAssets = assets.slice(0, 5);
+                        
+                        if (recentAssets.length > 0) {
+                            recentAssets.forEach(asset => {
+                                const assetElement = document.createElement('div');
+                                assetElement.className = 'asset-item';
+                                assetElement.innerHTML = `
+                                    <div class="asset-info">
+                                        <h3>${asset.nombre}</h3>
+                                        <p><strong>Serial:</strong> ${asset.serial}</p>
+                                        <p><strong>Marca:</strong> ${asset.marca}</p>
+                                        <p><strong>Modelo:</strong> ${asset.modelo}</p>
+                                        <p><strong>Estado:</strong> <span class="badge ${getBadgeClassForState(asset.estado)}">${asset.estado}</span></p>
+                                    </div>
+                                    <div class="asset-actions">
+                                        <button class="btn btn-icon" onclick="showAssetDetails('${asset.id}')"><i class="fas fa-eye"></i></button>
+                                    </div>
+                                `;
+                                assetsContainer.appendChild(assetElement);
+                            });
+                        } else {
+                            assetsContainer.innerHTML = '<p class="empty-message">No hay activos registrados recientemente.</p>';
+                        }
+                    }
+                    
+                    // Actualizar estadísticas
+                    window.updateDashboardStats(assets);
+                } else {
+                    console.log('No hay activos en Firebase');
+                    document.querySelector('.recent-assets-list').innerHTML = 
+                        '<p class="empty-message">No hay activos registrados recientemente.</p>';
+                }
+            } catch (error) {
+                console.error('Error al cargar activos desde Firebase:', error);
+            }
+            
+            // Función auxiliar para determinar la clase del badge
+            function getBadgeClassForState(estado) {
+                if (!estado) return 'badge-secondary';
+                
+                switch(estado.toLowerCase()) {
+                    case 'disponible': return 'badge-success';
+                    case 'asignado': return 'badge-info';
+                    case 'mantenimiento': return 'badge-warning';
+                    case 'dañado': return 'badge-danger';
+                    case 'en reparación': return 'badge-warning';
+                    case 'fuera de uso': return 'badge-danger';
+                    default: return 'badge-secondary';
+                }
+            }
+            
+            // Función para actualizar estadísticas del dashboard
+            window.updateDashboardStats = function(assets) {
+                if (!assets || assets.length === 0) return;
+                
+                // Totales por estado
+                const stats = {
+                    total: assets.length,
+                    disponibles: 0,
+                    asignados: 0,
+                    mantenimiento: 0,
+                    dañados: 0,
+                    // Agregar contadores por tipo
+                    tipoHardware: 0,
+                    tipoSoftware: 0,
+                    tipoRedes: 0,
+                    tipoOtros: 0
+                };
+                
+                // Contar por estado y tipo
+                assets.forEach(asset => {
+                    // Contar por estado
+                    const estado = asset.estado?.toLowerCase();
+                    if (estado === 'disponible') stats.disponibles++;
+                    else if (estado === 'asignado') stats.asignados++;
+                    else if (estado === 'mantenimiento' || estado === 'en reparación') stats.mantenimiento++;
+                    else if (estado === 'dañado' || estado === 'fuera de uso') stats.dañados++;
+                    
+                    // Contar por tipo de activo (con verificación mejorada)
+                    const tipo = asset.tipo?.toLowerCase() || '';
+                    console.log(`Procesando activo: ${asset.nombre}, Tipo original: ${asset.tipo}, Tipo normalizado: ${tipo}`);
+                    
+                    if (tipo.includes('hardware') || tipo === 'hardware') {
+                        stats.tipoHardware++;
+                        console.log(`  Contado como HARDWARE: ${asset.nombre}`);
+                    }
+                    else if (tipo.includes('software') || tipo === 'software') {
+                        stats.tipoSoftware++;
+                        console.log(`  Contado como SOFTWARE: ${asset.nombre}`);
+                    }
+                    else if (tipo.includes('network') || tipo.includes('red') || tipo === 'redes' || tipo === 'network') {
+                        stats.tipoRedes++;
+                        console.log(`  Contado como REDES: ${asset.nombre}`);
+                    }
+                    else if (tipo.includes('other') || tipo.includes('otro') || tipo === 'other' || tipo === 'otros' || tipo === 'otros activos ti') {
+                        stats.tipoOtros++;
+                        console.log(`  Contado como OTROS: ${asset.nombre}`);
+                    }
+                    else {
+                        // Si no se reconoce el tipo, lo contamos como 'otros'
+                        stats.tipoOtros++;
+                        console.log(`  Tipo NO RECONOCIDO, contado como OTROS: ${asset.nombre} (tipo: ${tipo})`);
+                    }
+                });
+                
+                // Actualizar elementos de estado en el DOM
+                var el;
+el = document.getElementById('total-assets'); if (el) el.textContent = stats.total;
+el = document.getElementById('available-assets'); if (el) el.textContent = stats.disponibles;
+el = document.getElementById('assigned-assets'); if (el) el.textContent = stats.asignados;
+el = document.getElementById('maintenance-assets'); if (el) el.textContent = stats.mantenimiento;
+el = document.getElementById('damaged-assets'); if (el) el.textContent = stats.dañados;
+
+                // Actualizar tarjetas de tipos de activos directamente por ID
+                document.getElementById('hardware-count').textContent = stats.tipoHardware;
+                document.getElementById('software-count').textContent = stats.tipoSoftware;
+                document.getElementById('network-count').textContent = stats.tipoRedes;
+                document.getElementById('other-count').textContent = stats.tipoOtros;
+                
+                // Debug - mostrar información detallada
+                console.log('Estadísticas por tipo:', {
+                    'Hardware': stats.tipoHardware,
+                    'Software': stats.tipoSoftware,
+                    'Redes': stats.tipoRedes,
+                    'Otros': stats.tipoOtros
+                });
+                
+                // Mostrar en consola los tipos de activos para depurar
+                console.log('Tipos de activos encontrados:');
+                assets.forEach(asset => {
+                    console.log(`ID: ${asset.id}, Nombre: ${asset.nombre}, Tipo: ${asset.tipo}`);
+                });
+                
+                // Forzar una actualización inmediata del DOM
+                setTimeout(() => {
+                    document.getElementById('hardware-count').textContent = stats.tipoHardware;
+                    document.getElementById('software-count').textContent = stats.tipoSoftware;
+                    document.getElementById('network-count').textContent = stats.tipoRedes;
+                    document.getElementById('other-count').textContent = stats.tipoOtros;
+                }, 100);
+                
+                console.log('Estadísticas actualizadas:', stats);
+            }
+        });
+    </script>
 </head>
 <body>
     <!-- Header -->
@@ -29,7 +252,11 @@
                         <i class="fas fa-search"></i>
                         <input type="search" placeholder="Buscar activos...">
                     </div>
+                    <div class="user-info">
+                        <button id="logout-btn" class="btn btn-outline">Cerrar Sesión</button>
+                    </div>
                     <a href="register.html" class="btn btn-primary">Nuevo Activo</a>
+                    <span id="user-role" class="user-role"></span>
                 </div>
             </div>
         </div>
@@ -45,40 +272,40 @@
 
             <!-- Dashboard Stats -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card" id="hardware-card">
                     <div class="stat-header">
                         <h3>Hardware</h3>
                         <i class="fas fa-desktop"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="hardware-count">0</div>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" id="software-card">
                     <div class="stat-header">
                         <h3>Software</h3>
                         <i class="fas fa-hdd"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="software-count">0</div>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" id="network-card">
                     <div class="stat-header">
                         <h3>Redes</h3>
                         <i class="fas fa-network-wired"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="network-count">0</div>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" id="other-card">
                     <div class="stat-header">
                         <h3>Otros Activos TI</h3>
                         <i class="fas fa-box"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">0</div>
+                        <div class="stat-value" id="other-count">0</div>
                     </div>
                 </div>
             </div>
@@ -86,98 +313,289 @@
             <!-- Recent Assets -->
             <section class="section">
                 <h2>Activos Recientes</h2>
-                <div class="table-container">
-                    <table id="recent-assets" class="data-table">
+                <div id="recent-assets-container">
+                    <div id="loading-assets" class="loading-message">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando activos recientes...
+                    </div>
+                    <style>
+                        /* Estilos que eliminan completamente cualquier barra vertical */
+                        #recent-assets tr:hover,
+                        table tr:hover,
+                        .data-table tr:hover,
+                        tr.clickable-row:hover {
+                            background-color: #e0f7fa !important;
+                            cursor: pointer !important;
+                        }
+                        
+                        /* Reset agresivo de cualquier borde izquierdo */
+                        #recent-assets tr td:first-child,
+                        #recent-assets tr:hover td:first-child,
+                        table tr td:first-child,
+                        table tr:hover td:first-child,
+                        tr td:first-child,
+                        tr:hover td:first-child,
+                        .data-table tr td:first-child,
+                        .data-table tr:hover td:first-child {
+                            border-left: none !important;
+                            border-left-width: 0 !important;
+                            padding-left: initial !important;
+                        }
+                    </style>
+                    <table id="recent-assets" class="data-table" style="display: none;">
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Tipo</th>
+                                <th class="hide-mobile">Serial</th>
                                 <th>Estado</th>
-                                <th>Ubicación</th>
-                                <th>Usuario</th>
+                                <th class="hide-mobile">Ubicación</th>
+                                <th class="hide-mobile">Usuario</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>A001</td>
-                                <td>Laptop Dell XPS 15</td>
-                                <td>Hardware</td>
-                                <td class="hide-mobile">DLL-XPS-2023-001</td>
-                                <td><span class="badge badge-assigned">Asignado</span></td>
-                                <td class="hide-mobile">Oficina Principal</td>
-                                <td class="hide-mobile">Carlos Mendoza</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>A002</td>
-                                <td>Microsoft Office 365</td>
-                                <td>Software</td>
-                                <td class="hide-mobile">MS-O365-2023-045</td>
-                                <td><span class="badge badge-available">Disponible</span></td>
-                                <td class="hide-mobile">N/A</td>
-                                <td class="hide-mobile">N/A</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>A003</td>
-                                <td>Switch Cisco Catalyst 2960</td>
-                                <td>Redes</td>
-                                <td class="hide-mobile">CSC-2960-2022-012</td>
-                                <td><span class="badge badge-maintenance">En mantenimiento</span></td>
-                                <td class="hide-mobile">Sala de Servidores</td>
-                                <td class="hide-mobile">N/A</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>A004</td>
-                                <td>Proyector Epson PowerLite</td>
-                                <td>Otros activos TI</td>
-                                <td class="hide-mobile">EPS-PL-2023-007</td>
-                                <td><span class="badge badge-available">Disponible</span></td>
-                                <td class="hide-mobile">Sala de Conferencias</td>
-                                <td class="hide-mobile">N/A</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>A005</td>
-                                <td>Impresora HP LaserJet Pro</td>
-                                <td>Hardware</td>
-                                <td class="hide-mobile">HP-LJP-2022-023</td>
-                                <td><span class="badge badge-assigned">Asignado</span></td>
-                                <td class="hide-mobile">Departamento de Finanzas</td>
-                                <td class="hide-mobile">María Rodríguez</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <a href="#" class="btn-icon"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="btn-icon delete"><i class="fas fa-trash"></i></a>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="recent-assets-body">
+                            <!-- Los activos se cargarán dinámicamente desde Firebase -->
+
                         </tbody>
                     </table>
+                    <div id="no-assets-message" class="empty-message" style="display: none; text-align: center; padding: 20px; font-style: italic; color: #888;">
+                        <p>No hay activos registrados aún</p>
+                    </div>
                 </div>
             </section>
+
+            <script>
+                // Función para cargar activos recientes directamente en la página
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(async function() {
+                        try {
+                            if (!firebase.auth().currentUser) {
+                                console.log('Usuario no autenticado');
+                                return;
+                            }
+                            
+                            const db = firebase.firestore();
+                            const assetsSnapshot = await db.collection('assets').get();
+                            
+                            // Ocultar mensaje de carga
+                            document.getElementById('loading-assets').style.display = 'none';
+                            
+                            if (assetsSnapshot.empty) {
+                                // Mostrar mensaje de no hay activos
+                                document.getElementById('no-assets-message').style.display = 'block';
+                                return;
+                            }
+                            
+                            // Mostrar tabla
+                            document.getElementById('recent-assets').style.display = 'table';
+                            
+                            // Convertir a array y ordenar (más recientes primero)
+                            const assets = [];
+                            assetsSnapshot.forEach(doc => {
+                                const data = doc.data();
+                                // Asegurarse de que el ID está disponible
+                                if (!data.id) data.id = doc.id;
+                                assets.push(data);
+                            });
+                            
+                            // ACTUALIZAR TARJETAS DE TIPO DE ACTIVOS (NUEVO CÓDIGO)
+                            console.log('Total de activos cargados:', assets.length);
+                            
+                            // Contadores por tipo
+                            let hardware = 0;
+                            let software = 0;
+                            let redes = 0;
+                            let otros = 0;
+                            
+                            // Contar activos por tipo
+                            assets.forEach(asset => {
+                                const tipo = (asset.tipo || '').toLowerCase();
+                                console.log(`Activo: ${asset.nombre}, Tipo: ${tipo}`);
+                                
+                                if (tipo.includes('hardware')) {
+                                    hardware++;
+                                } else if (tipo.includes('software')) {
+                                    software++;
+                                } else if (tipo.includes('red') || tipo.includes('network')) {
+                                    redes++;
+                                } else {
+                                    otros++;
+                                }
+                            });
+                            
+                            // Actualizar directamente las tarjetas
+                            document.getElementById('hardware-count').innerText = hardware;
+                            document.getElementById('software-count').innerText = software;
+                            document.getElementById('network-count').innerText = redes;
+                            document.getElementById('other-count').innerText = otros;
+                            
+                            console.log('Conteo actualizado:', { hardware, software, redes, otros });
+                            
+                            assets.sort((a, b) => {
+                                return new Date(b.fechaRegistro || 0) - new Date(a.fechaRegistro || 0);
+                            });
+                            
+                            // Mostrar solo los 5 más recientes
+                            const recentAssets = assets.slice(0, 5);
+                            const tbody = document.getElementById('recent-assets-body');
+                            
+                            // Limpiar tabla
+                            tbody.innerHTML = '';
+                            
+                            // Añadir activos recientes
+                            recentAssets.forEach(asset => {
+                                const tr = document.createElement('tr');
+                                
+                                // Determinar clase de badge según estado
+                                let badgeClass = 'badge-secondary';
+                                if (asset.estado) {
+                                    switch(asset.estado.toLowerCase()) {
+                                        case 'disponible': badgeClass = 'badge-success'; break;
+                                        case 'asignado': badgeClass = 'badge-info'; break;
+                                        case 'mantenimiento': badgeClass = 'badge-warning'; break;
+                                        case 'dañado': badgeClass = 'badge-danger'; break;
+                                        case 'en reparación': badgeClass = 'badge-warning'; break;
+                                        case 'fuera de uso': 
+                                            badgeClass = 'badge-fuera-uso'; 
+                                            asset.estado = 'Fuera de Uso'; // Formato con espacios y mayúsculas
+                                            break;
+                                    }
+                                }
+                                
+                                tr.setAttribute('data-id', asset.id);
+                                tr.className = 'clickable-row';
+                                // Agregar estilos inline directamente al elemento (sin barra vertical)
+                                tr.style.transition = 'background-color 0.2s';
+                                tr.onmouseover = function() {
+                                    this.style.backgroundColor = '#e0f7fa';
+                                    this.style.cursor = 'pointer';
+                                    // Eliminada la barra vertical
+                                };
+                                tr.onmouseout = function() {
+                                    this.style.backgroundColor = '';
+                                };
+                                tr.onclick = function() { showAssetDetails(asset.id); };
+                                tr.innerHTML = `
+                                    <td style="padding-left: 30px !important;">${asset.id ? asset.id.substring(0, 5) + '...' : 'N/A'}</td>
+                                    <td>${asset.nombre || 'Sin nombre'}</td>
+                                    <td>${asset.tipo || 'N/A'}</td>
+                                    <td class="hide-mobile">${asset.serial || 'N/A'}</td>
+                                    <td>
+                                        ${asset.estado && asset.estado.toLowerCase() === 'fuera de uso' ?
+                                            `<span class="badge badge-danger">Fuera de Uso</span>` :
+                                            `<span class="badge ${badgeClass}">${asset.estado || 'N/A'}</span>`
+                                        }
+                                     </td>
+                                    <td class="hide-mobile">${asset.ubicacion || 'N/A'}</td>
+                                    <td class="hide-mobile">${asset.asignadoA || 'No asignado'}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="register.html?id=${asset.id}" class="btn-icon" onclick="event.stopPropagation();"><i class="fas fa-edit"></i></a>
+                                            <a href="#" class="btn-icon delete" onclick="event.stopPropagation(); confirmDelete('${asset.id}'); return false;"><i class="fas fa-trash"></i></a>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                tbody.appendChild(tr);
+                            });
+                            
+                            // Actualizar estadísticas del dashboard
+                            if (typeof assets !== 'undefined') updateDashboardStats(assets);
+                            
+                        } catch (error) {
+                            console.error('Error al cargar activos recientes:', error);
+                            document.getElementById('loading-assets').innerHTML = 
+                                `Error al cargar activos: ${error.message}`;
+                        }
+                    }, 1000); // Esperar 1 segundo para que Firebase esté listo
+                });
+                
+                // Función para confirmar eliminación
+                window.confirmDelete = function(assetId) {
+                    const modal = document.getElementById('delete-modal');
+                    modal.style.display = 'flex';
+                    
+                    const confirmBtn = modal.querySelector('.btn-danger');
+                    confirmBtn.onclick = async function() {
+                        try {
+                            const db = firebase.firestore();
+                            await db.collection('assets').doc(assetId).delete();
+                            modal.style.display = 'none';
+                            alert('Activo eliminado exitosamente');
+                            
+                            // Recargar la página
+                            location.reload();
+                        } catch (error) {
+                            console.error('Error al eliminar:', error);
+                            alert('Error al eliminar: ' + error.message);
+                        }
+                    };
+                    
+                    // Configurar botón de cancelar
+                    const cancelBtn = modal.querySelector('.btn-outline');
+                    cancelBtn.onclick = function() {
+                        modal.style.display = 'none';
+                    };
+                };
+                
+                // Función para mostrar detalles del activo
+                window.showAssetDetails = async function(assetId) {
+                    try {
+                        const db = firebase.firestore();
+                        const doc = await db.collection('assets').doc(assetId).get();
+                        
+                        if (doc.exists) {
+                            const asset = doc.data();
+                            const actualAssetId = asset.id || doc.id;
+                            
+                            // Llenar datos del modal
+                            document.getElementById('detail-id').textContent = actualAssetId;
+                            document.getElementById('detail-nombre').textContent = asset.nombre || 'N/A';
+                            document.getElementById('detail-tipo').textContent = asset.tipo || 'N/A';
+                            document.getElementById('detail-serial').textContent = asset.serial || 'N/A';
+                            document.getElementById('detail-marca').textContent = asset.marca || 'N/A';
+                            document.getElementById('detail-modelo').textContent = asset.modelo || 'N/A';
+                            document.getElementById('detail-estado').textContent = asset.estado || 'N/A';
+                            document.getElementById('detail-ubicacion').textContent = asset.ubicacion || 'N/A';
+                            document.getElementById('detail-asignado').textContent = asset.asignadoA || 'No asignado';
+                            document.getElementById('detail-fecha-compra').textContent = asset.fechaCompra || 'N/A';
+                            document.getElementById('detail-fecha-registro').textContent = 
+                                asset.fechaRegistro ? new Date(asset.fechaRegistro).toLocaleDateString('es-ES') : 'N/A';
+                            document.getElementById('detail-notas').textContent = asset.notas || 'Sin notas';
+                            
+                            // Mostrar modal
+                            const modal = document.getElementById('details-modal');
+                            modal.style.display = 'flex';
+                            
+                            // Guardar el ID del activo para referencia futura
+                            window.currentAssetId = actualAssetId;
+                            
+                            // Botón cerrar
+                            const closeButtons = modal.querySelectorAll('.close-modal');
+                            closeButtons.forEach(btn => {
+                                btn.onclick = function() {
+                                    modal.style.display = 'none';
+                                };
+                            });
+                            
+                            // Botón de editar
+                            const editButton = document.getElementById('edit-asset-btn');
+                            if (editButton) {
+                                editButton.onclick = function() {
+                                    // Redirigir a la página de registro con el ID del activo
+                                    window.location.href = `register.html?id=${actualAssetId}`;
+                                };
+                            }
+                        } else {
+                            alert('No se encontró el activo solicitado');
+                        }
+                    } catch (error) {
+                        console.error('Error al mostrar detalles:', error);
+                        alert('Error al mostrar detalles: ' + error.message);
+                    }
+                };
+            </script>
 
             <!-- Quick Access -->
             <div class="quick-access-grid">
@@ -282,7 +700,7 @@
                     </div>
                     <div class="modal-footer">
                         <button class="close-modal btn">Cerrar</button>
-                        <button class="btn btn-primary" onclick="handleEdit(currentAssetId)">Editar</button>
+                        <button id="edit-asset-btn" class="btn btn-primary">Editar</button>
                     </div>
                 </div>
             </div>
@@ -309,7 +727,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <p>© 2025 ITNetgroup. Todos los derechos reservados.</p>
+                <p>&copy; 2025 ITNetgroup. Todos los derechos reservados.</p>
                 <p>Cartagena, Colombia</p>
             </div>
         </div>

@@ -6,7 +6,267 @@
     <title>Registrar Activo - ITNetgroup</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="script.js"></script>
+    <!-- Firebase SDK con Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBulqDJunx7mkijQVjTh_WZdMfS9yQGfxI",
+            authDomain: "gestion-de-activos-60f8c.firebaseapp.com",
+            projectId: "gestion-de-activos-60f8c",
+            storageBucket: "gestion-de-activos-60f8c.firebasestorage.app",
+            messagingSenderId: "1024745036309",
+            appId: "1:1024745036309:web:0bfd76401887e548ac8c1c",
+            measurementId: "G-HHRJK85QFM"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Variables globales
+        let editMode = false;
+        let assetId = null;
+
+        // Check authentication and load asset data if in edit mode
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar autenticación
+            firebase.auth().onAuthStateChanged(async function(user) {
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                // Si hay usuario, NO redirigir a ningún lado, solo continuar
+
+                // Verificar si estamos en modo de edición (URL contiene id)
+                const urlParams = new URLSearchParams(window.location.search);
+                assetId = urlParams.get('id');
+                
+                if (assetId) {
+                    editMode = true;
+                    // Cambiar el título y el texto del botón
+                    const titleElement = document.querySelector('.page-header h1');
+                    if (titleElement) titleElement.textContent = 'Editar Activo';
+                    
+                    // Esperar que el DOM esté completamente cargado antes de modificar los elementos
+                    setTimeout(async () => {
+                        try {
+                            // Cambiar el texto del botón si existe
+                            const submitButton = document.querySelector('button[type="submit"]');
+                            if (submitButton) submitButton.textContent = 'Guardar Cambios';
+                            
+                            // Asegurar que el campo oculto existe antes de continuar
+                            const idField = document.getElementById('asset-id');
+                            if (idField) {
+                                // Cargar datos del activo desde Firebase
+                                const db = firebase.firestore();
+                                const docRef = db.collection('assets').doc(assetId);
+                                const doc = await docRef.get();
+                                
+                                if (doc.exists) {
+                                    const asset = doc.data();
+                                    // Guardar el ID en un campo oculto
+                                    idField.value = assetId;
+                                    
+                                    // Llenar los campos del formulario con los datos del activo
+                                    fillFormWithAssetData(asset);
+                                } else {
+                                    console.error('No se encontró el activo con ID:', assetId);
+                                    // No mostrar alert, solo redireccionar silenciosamente
+                                    window.location.href = 'assets.html';
+                                }
+                            } else {
+                                console.warn('Campo de ID no encontrado, esperando DOM...');
+                            }
+                        } catch (error) {
+                            console.error('Error al cargar datos del activo:', error);
+                            // No mostrar alerta al usuario, solo registrar en consola
+                        }
+                    }, 500); // Esperar 500ms para asegurar que el DOM está listo
+                }
+                
+                // Configurar el formulario
+                const registerForm = document.getElementById('asset-register-form');
+                if (registerForm) {
+                    registerForm.addEventListener('submit', async function(event) {
+                        event.preventDefault();
+                        
+                        try {
+                            // Obtener datos del formulario
+                            const formData = new FormData(this);
+                            const assetType = formData.get('asset-type');
+                            
+                            // Crear objeto de activo
+                            const asset = {
+                                id: document.getElementById('asset-id')?.value || generateAssetId(),
+                                tipo: assetType,
+                                nombre: formData.get('name'),
+                                serial: formData.get('serial'),
+                                marca: formData.get('brand'),
+                                modelo: formData.get('model'),
+                                fechaCompra: formData.get('purchase-date'),
+                                estado: formData.get('status'),
+                                ubicacion: formData.get('location'),
+                                asignadoA: formData.get('assigned-to'),
+                                notas: formData.get('notes'),
+                                fechaRegistro: new Date().toISOString()
+                            };
+                            
+                            // Agregar campos específicos según el tipo
+                            if (assetType === 'hardware') {
+                                asset.procesador = formData.get('processor');
+                                asset.memoria = formData.get('memory');
+                                asset.almacenamiento = formData.get('storage');
+                                asset.garantia = formData.get('warranty');
+                            } else if (assetType === 'software') {
+                                asset.licencia = formData.get('license-key');
+                                asset.fechaExpiracion = formData.get('expiration-date');
+                                asset.version = formData.get('version');
+                                asset.tipoLicencia = formData.get('license-type');
+                            } else if (assetType === 'network') {
+                                asset.ip = formData.get('ip-address');
+                                asset.mac = formData.get('mac-address');
+                                asset.tipoRed = formData.get('network-type');
+                                asset.puertos = formData.get('ports');
+                            } else if (assetType === 'other') {
+                                asset.categoria = formData.get('category');
+                                asset.especificaciones = formData.get('specifications');
+                            }
+                            
+                            // Modo edición o nuevo registro
+                            const isEdit = !!document.getElementById('asset-id')?.value;
+                            
+                            // Guardar en Firebase
+                            const db = firebase.firestore();
+                            await db.collection('assets').doc(asset.id).set(asset);
+                            
+                            // También guardar en localStorage para compatibilidad
+                            const assets = JSON.parse(localStorage.getItem('assets') || '[]');
+                            if (isEdit) {
+                                const index = assets.findIndex(a => a.id === asset.id);
+                                if (index !== -1) assets[index] = asset;
+                                else assets.push(asset);
+                            } else {
+                                assets.push(asset);
+                            }
+                            localStorage.setItem('assets', JSON.stringify(assets));
+                            
+                            // Mensaje de éxito
+                            alert(`Activo ${isEdit ? 'actualizado' : 'registrado'} exitosamente en Firebase`);
+                            
+                            // Redireccionar
+                            window.location.href = 'index.html';
+                            
+                        } catch (error) {
+                            console.error('Error al registrar activo:', error);
+                            alert('Error al guardar en Firebase: ' + error.message);
+                        }
+                    });
+                }
+            });
+            
+            // Función para generar ID único
+            function generateAssetId() {
+                return 'A' + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+            }
+            
+            // Función para llenar el formulario con los datos del activo
+            function fillFormWithAssetData(asset) {
+                try {
+                    // Esperar un breve momento para asegurar que el DOM esté listo
+                    setTimeout(() => {
+                        try {
+                            // Seleccionar el tipo de activo y mostrar los campos correspondientes
+                            const assetTypeSelect = document.getElementById('asset-type');
+                            if (assetTypeSelect) {
+                                assetTypeSelect.value = asset.tipo || 'other';
+                                
+                                // Disparar el evento change para mostrar los campos específicos
+                                const event = new Event('change');
+                                assetTypeSelect.dispatchEvent(event);
+                            }
+                            
+                            // Función auxiliar para establecer valores de forma segura
+                            function setValueSafely(id, value) {
+                                const element = document.getElementById(id);
+                                if (element) {
+                                    element.value = value || '';
+                                }
+                            }
+                            
+                            // Rellenar campos comunes
+                            setValueSafely('name', asset.nombre);
+                            setValueSafely('serial', asset.serial);
+                            setValueSafely('brand', asset.marca);
+                            setValueSafely('model', asset.modelo);
+                            setValueSafely('purchase-date', asset.fechaCompra);
+                            setValueSafely('status', asset.estado || 'disponible');
+                            setValueSafely('location', asset.ubicacion);
+                            setValueSafely('assigned-to', asset.asignadoA);
+                            setValueSafely('notes', asset.notas);
+                            
+                            // Rellenar campos específicos según el tipo de activo
+                            if (asset.tipo === 'hardware') {
+                                setValueSafely('processor', asset.procesador);
+                                setValueSafely('memory', asset.memoria);
+                                setValueSafely('storage', asset.almacenamiento);
+                                setValueSafely('warranty', asset.garantia);
+                            } else if (asset.tipo === 'software') {
+                                setValueSafely('license-key', asset.licencia);
+                                setValueSafely('expiration-date', asset.fechaExpiracion);
+                                setValueSafely('version', asset.version);
+                                setValueSafely('license-type', asset.tipoLicencia);
+                            } else if (asset.tipo === 'network') {
+                                setValueSafely('ip-address', asset.ip);
+                                setValueSafely('mac-address', asset.mac);
+                                setValueSafely('network-type', asset.tipoRed);
+                                setValueSafely('ports', asset.puertos);
+                            } else if (asset.tipo === 'other') {
+                                setValueSafely('category', asset.categoria);
+                                setValueSafely('specifications', asset.especificaciones);
+                            }
+                            
+                            console.log('Formulario cargado exitosamente con los datos del activo');
+                        } catch (innerError) {
+                            console.error('Error al rellenar el formulario:', innerError);
+                            // No mostrar el error al usuario
+                        }
+                    }, 300); // Esperar 300ms para asegurar que el DOM esté listo
+                } catch (error) {
+                    console.error('Error en fillFormWithAssetData:', error);
+                    // No mostrar el error al usuario
+                }
+            }
+            // Mostrar y ocultar campos según el tipo de activo
+            const assetTypeSelect = document.getElementById('asset-type');
+            function updateAssetFields() {
+                const type = assetTypeSelect.value;
+                // Hardware
+                document.querySelectorAll('.hardware-field').forEach(el => {
+                    el.classList.toggle('hidden', type !== 'hardware');
+                });
+                // Software
+                document.querySelectorAll('.software-field').forEach(el => {
+                    el.classList.toggle('hidden', type !== 'software');
+                });
+                // Redes
+                document.querySelectorAll('.network-field').forEach(el => {
+                    el.classList.toggle('hidden', type !== 'network');
+                });
+                // Otros
+                document.querySelectorAll('.other-field').forEach(el => {
+                    el.classList.toggle('hidden', type !== 'other');
+                });
+            }
+            if (assetTypeSelect) {
+                assetTypeSelect.addEventListener('change', updateAssetFields);
+                // Ejecutar al cargar la página para el valor inicial
+                updateAssetFields();
+            }
+        });
+    </script>
 </head>
 <body>
     <!-- Header -->
@@ -43,15 +303,17 @@
                     <p>Seleccione el tipo de activo y complete la información requerida</p>
                 </div>
                 <div class="card-content">
-                    <form action="#" method="post" class="register-form">
+                    <form class="register-form" id="asset-register-form">
+                        <!-- Campo oculto para el ID del activo (usado solo en modo edición) -->
+                        <input type="hidden" id="asset-id" name="asset-id" value="">
                         <div class="form-group">
                             <label for="asset-type">Tipo de Activo</label>
                             <select id="asset-type" name="asset-type" required>
-                                <option value="hardware" selected>Hardware</option>
-                                <option value="software">Software</option>
-                                <option value="network">Redes</option>
-                                <option value="other">Otros activos TI</option>
-                            </select>
+    <option value="hardware" selected>Hardware</option>
+    <option value="software">Software</option>
+    <option value="network">Redes</option>
+    <option value="other">Otros activos TI</option>
+</select>
                         </div>
 
                         <div class="form-grid">
@@ -86,7 +348,7 @@
                                     <option value="disponible" selected>Disponible</option>
                                     <option value="asignado">Asignado</option>
                                     <option value="mantenimiento">En Mantenimiento</option>
-                                    <option value="fueradeuso">Fuera de Uso</option>
+                                    <option value="fuera de uso">Fuera de Uso</option>
                                 </select>
                             </div>
 

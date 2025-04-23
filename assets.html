@@ -5,8 +5,261 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Activos - ITNetgroup</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="reset-hover.css">
+    <link rel="stylesheet" href="fix-padding.css">
+    <style>
+        /* Estilos de hover sin barra vertical */
+        tr.clickable-row:hover,
+        .data-table tr:hover,
+        .data-table tbody tr:hover {
+            background-color: #e0f7fa !important;
+            cursor: pointer !important;
+            border-left: none !important;
+        }
+        
+        /* Reset de cualquier borde izquierdo */
+        .data-table tr td:first-child,
+        .data-table tr:hover td:first-child,
+        tr.clickable-row td:first-child,
+        tr.clickable-row:hover td:first-child {
+            border-left: none !important;
+            padding-left: inherit !important;
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBulqDJunx7mkijQVjTh_WZdMfS9yQGfxI",
+            authDomain: "gestion-de-activos-60f8c.firebaseapp.com",
+            projectId: "gestion-de-activos-60f8c",
+            storageBucket: "gestion-de-activos-60f8c.firebasestorage.app",
+            messagingSenderId: "1024745036309",
+            appId: "1:1024745036309:web:0bfd76401887e548ac8c1c",
+            measurementId: "G-HHRJK85QFM"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    
+    <!-- Script para cargar activos desde Firebase -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Verificar autenticación
+                firebase.auth().onAuthStateChanged(async function(user) {
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    await loadAssetsFromFirebase();
+                });
+                
+                // Función para cargar activos desde Firebase
+                async function loadAssetsFromFirebase() {
+                    const db = firebase.firestore();
+                    const snapshot = await db.collection('assets').get();
+                    
+                    if (!snapshot.empty) {
+                        // Obtener activos
+                        const assets = [];
+                        snapshot.forEach(doc => {
+                            assets.push(doc.data());
+                        });
+                        
+                        // Mostrar activos en la tabla
+                        displayAssetsInTable(assets);
+                    } else {
+                        document.querySelector('.data-table tbody').innerHTML = 
+                            '<tr><td colspan="9" class="empty-message">No hay activos registrados.</td></tr>';
+                    }
+                }
+                
+                // Función para mostrar activos en la tabla
+                function displayAssetsInTable(assets) {
+                    const tbody = document.querySelector('.data-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    assets.forEach(asset => {
+                        const row = document.createElement('tr');
+                        row.className = 'clickable-row';
+                        row.setAttribute('data-id', asset.id);
+                        row.onclick = function() { showAssetDetails(asset.id); };
+                        const estadoTexto = asset.estado && asset.estado.toLowerCase() === 'fuera de uso' ? 'Fuera de Uso' : asset.estado;
+                        const estatusCelda = asset.estado && asset.estado.toLowerCase() === 'fuera de uso' ?
+                            `<td><span class="badge badge-danger">Fuera de Uso</span></td>` :
+                            `<td><span class="badge ${getBadgeClassForState(asset.estado)}">${asset.estado}</span></td>`;
+                            
+                        row.innerHTML = `
+                            <td style="padding-left: 30px !important;">${asset.id.substring(0, 8)}...</td>
+                            <td>${asset.nombre}</td>
+                            <td>${asset.tipo}</td>
+                            <td class="hide-mobile">${asset.serial}</td>
+                            ${estatusCelda}
+                            <td class="hide-mobile">${asset.ubicacion || 'N/A'}</td>
+                            <td class="hide-mobile">${asset.asignadoA || 'No asignado'}</td>
+                            <td class="hide-mobile">${formatDate(asset.fechaRegistro)}</td>
+                            <td class="actions-cell">
+                                <button class="btn btn-icon" onclick="event.stopPropagation(); handleEdit('${asset.id}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-icon btn-danger" onclick="event.stopPropagation(); handleDelete('${asset.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Configurar filtros y búsqueda
+                    setupFiltersAndSearch(assets);
+                }
+                
+                // Función para configurar filtros y búsqueda
+                function setupFiltersAndSearch(assets) {
+                    const searchInput = document.getElementById('search-input');
+                    const typeFilter = document.getElementById('type-filter');
+                    const statusFilter = document.getElementById('status-filter');
+                    
+                    // Función para aplicar filtros
+                    function applyFilters() {
+                        const searchTerm = searchInput.value.toLowerCase();
+                        const selectedType = typeFilter.value;
+                        const selectedStatus = statusFilter.value;
+                        
+                        const filteredAssets = assets.filter(asset => {
+                            // Filtrar por término de búsqueda
+                            const matchesSearch = searchTerm === '' || 
+                                asset.nombre.toLowerCase().includes(searchTerm) ||
+                                asset.serial.toLowerCase().includes(searchTerm);
+                            
+                            // Filtrar por tipo
+                            const matchesType = selectedType === 'all' || 
+                                asset.tipo.toLowerCase() === selectedType.toLowerCase();
+                            
+                            // Filtrar por estado
+                            const matchesStatus = selectedStatus === 'all' || 
+                                asset.estado.toLowerCase() === selectedStatus.toLowerCase();
+                            
+                            return matchesSearch && matchesType && matchesStatus;
+                        });
+                        
+                        displayAssetsInTable(filteredAssets);
+                    }
+                    
+                    // Configurar event listeners
+                    searchInput.addEventListener('input', applyFilters);
+                    typeFilter.addEventListener('change', applyFilters);
+                    statusFilter.addEventListener('change', applyFilters);
+                }
+                
+                // Función auxiliar para determinar la clase del badge
+                function getBadgeClassForState(estado) {
+                    if (!estado) return 'badge-secondary';
+                    
+                    switch(estado.toLowerCase()) {
+                        case 'disponible': return 'badge-success';
+                        case 'asignado': return 'badge-info';
+                        case 'mantenimiento': return 'badge-warning';
+                        case 'dañado': return 'badge-danger';
+                        case 'en reparación': return 'badge-warning';
+                        case 'fuera de uso': 
+                            // Aplicar formato especial
+                            setTimeout(() => {
+                                // Encontrar todos los badges con este estado y reformatear el texto
+                                document.querySelectorAll('.badge').forEach(badge => {
+                                    if (badge.textContent.toLowerCase().trim() === 'fuera de uso') {
+                                        badge.textContent = 'Fuera de Uso';
+                                    }
+                                });
+                            }, 100);
+                            return 'badge-fuera-uso';
+                        default: return 'badge-secondary';
+                    }
+                }
+                
+                // Función para formatear fechas
+                function formatDate(dateString) {
+                    if (!dateString) return 'N/A';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('es-ES');
+                }
+            } catch (error) {
+                console.error('Error al cargar activos:', error);
+            }
+        });
+        
+        // Función global para mostrar detalles del activo
+        window.showAssetDetails = async function(assetId) {
+            try {
+                const db = firebase.firestore();
+                const doc = await db.collection('assets').doc(assetId).get();
+                
+                if (doc.exists) {
+                    const asset = doc.data();
+                    
+                    // Llenar campos del modal
+                    document.getElementById('detail-id').textContent = asset.id;
+                    document.getElementById('detail-nombre').textContent = asset.nombre;
+                    document.getElementById('detail-tipo').textContent = asset.tipo;
+                    document.getElementById('detail-serial').textContent = asset.serial;
+                    document.getElementById('detail-marca').textContent = asset.marca;
+                    document.getElementById('detail-modelo').textContent = asset.modelo;
+                    document.getElementById('detail-estado').textContent = asset.estado;
+                    document.getElementById('detail-ubicacion').textContent = asset.ubicacion || 'N/A';
+                    document.getElementById('detail-asignado').textContent = asset.asignadoA || 'No asignado';
+                    document.getElementById('detail-fecha-compra').textContent = asset.fechaCompra;
+                    document.getElementById('detail-fecha-registro').textContent = new Date(asset.fechaRegistro).toLocaleDateString('es-ES');
+                    document.getElementById('detail-notas').textContent = asset.notas || 'Sin notas adicionales';
+                    
+                    // Mostrar modal
+                    document.getElementById('details-modal').style.display = 'flex';
+                    window.currentAssetId = assetId;
+                }
+            } catch (error) {
+                console.error('Error al mostrar detalles:', error);
+            }
+        };
+        
+        // Función global para manejar eliminación
+        window.handleDelete = function(assetId) {
+            const modal = document.getElementById('delete-modal');
+            modal.style.display = 'flex';
+            
+            const confirmBtn = modal.querySelector('.btn-danger');
+            confirmBtn.onclick = async function() {
+                try {
+                    const db = firebase.firestore();
+                    await db.collection('assets').doc(assetId).delete();
+                    modal.style.display = 'none';
+                    alert('Activo eliminado exitosamente');
+                    
+                    // Recargar lista de activos
+                    location.reload();
+                } catch (error) {
+                    console.error('Error al eliminar:', error);
+                    alert('Error al eliminar: ' + error.message);
+                }
+            };
+            
+            // Configurar botón de cancelar
+            const cancelBtn = modal.querySelector('.btn-outline');
+            cancelBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+        };
+        
+        // Función global para manejar edición
+        window.handleEdit = function(assetId) {
+            window.location.href = `register.html?id=${assetId}`;
+        };
+    </script>
+    
     <script src="script.js" defer></script>
+    <script src="hover-fix.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -65,6 +318,7 @@
                         </select>
                     </div>
                     <a href="#" class="btn btn-outline"><i class="fas fa-download"></i> <span class="hide-mobile">Exportar</span></a>
+                    <span id="user-role-display" style="color: #1976d2; margin-right: 10px; font-weight: 500;"></span>
                     <a href="register.html" class="btn btn-primary">Nuevo Activo</a>
                 </div>
             </div>

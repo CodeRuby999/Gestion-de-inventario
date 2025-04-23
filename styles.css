@@ -98,6 +98,18 @@
     gap: 16px;
   }
   
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .user-role {
+    font-weight: 600;
+    color: #1e88e5;
+    text-transform: capitalize;
+  }
+  
   .search-box {
     position: relative;
   }
@@ -336,11 +348,16 @@
     border-collapse: collapse;
   }
   
-  .data-table th,
-  .data-table td {
-    padding: 12px 16px;
+  .data-table td, .data-table th {
+    padding: 12px 15px;
+    padding-left: 20px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+  
+  /* Padding adicional para la primera columna */
+  .data-table td:first-child {
+    padding-left: 20px !important;
   }
   
   .data-table th {
@@ -353,8 +370,30 @@
     border-bottom: none;
   }
   
-  .data-table tr:hover {
-    background-color: #f5f5f5;
+  /* Estilos para filas clickeables - versión visible */
+  .data-table tr {
+    transition: all 0.2s ease;
+  }
+  
+  .data-table tr:hover,
+  .data-table tbody tr:hover {
+    background-color: #e0f7fa !important;
+    cursor: pointer;
+  }
+  
+  /* Se eliminó la barra vertical en hover */
+  
+  /* Asegurar que el estilo se aplique a todas las tablas */
+  #recent-assets tr:hover,
+  .data-table tbody tr:hover,
+  tr.clickable-row:hover {
+    background-color: #e0f7fa !important;
+    cursor: pointer;
+  }
+  
+  tr.clickable-row:active,
+  .data-table tr:active {
+    background-color: #b2ebf2 !important;
   }
   
   .total-row {
@@ -373,14 +412,13 @@
   /* Badges */
   .badge {
     display: inline-block;
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 3px 6px;
+    border-radius: 3px;
     font-size: 0.75rem;
-    font-weight: 500;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
+    font-weight: 600;
     color: white;
+    text-align: center;
+    margin: 2px;
   }
 
   .badge-available {
@@ -422,6 +460,22 @@
   .badge-danger {
     background-color: #e53935;
     color: #fff;
+  }
+  
+  /* Estilo específico para fuera de uso */
+  .badge-fuera-uso {
+    background-color: #e53935 !important;
+    color: #fff !important;
+    border: 2px solid #c62828 !important;
+    padding: 4px 8px !important;
+    font-weight: bold !important;
+    letter-spacing: 0.5px !important;
+    border-radius: 4px !important;
+    text-transform: capitalize !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    font-size: 0.85rem !important;
+    display: inline-block !important;
+    margin: 2px !important;
   }
   
   .badge-secondary {
@@ -677,6 +731,60 @@
     font-size: 4rem;
   }
   
+  /* Auth Forms */
+  .auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .auth-card {
+    max-width: 700px;
+    margin: 0 auto;
+    box-shadow: 0 6px 32px rgba(30, 136, 229, 0.10);
+    border-radius: 18px;
+    background: #fff;
+    padding: 48px 56px 36px 56px;
+    transition: max-width 0.2s, box-shadow 0.2s;
+}
+.auth-card .card-header h2 {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+}
+.auth-card .card-header p {
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+}
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .auth-link {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 0.95rem;
+    color: #666;
+  }
+  .auth-link a {
+    color: #1e88e5;
+    text-decoration: underline;
+    font-weight: 500;
+  }
+  .auth-link a:hover {
+    color: #1976d2;
+  }
+  .auth-error {
+    color: #e53935;
+    background: #fff0f0;
+    border: 1px solid #e53935;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    margin-top: 8px;
+    text-align: center;
+  }
   /* Modal */
   .modal {
     display: none;

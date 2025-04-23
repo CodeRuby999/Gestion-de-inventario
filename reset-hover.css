@@ -1,0 +1,46 @@
+/* Estilo para hover en filas de tablas */
+
+/* Restablecer estilos para todas las filas y celdas primero */
+table tr,
+table tr td,
+table tbody tr,
+table tbody tr td {
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    border-left: none !important;
+    border-left-width: 0 !important;
+    border-left-style: none !important;
+    border-left-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Establecer padding consistente */
+table tr td,
+table tr td:first-child,
+.data-table tr td,
+.data-table tr td:first-child,
+tr.clickable-row td,
+tr.clickable-row td:first-child,
+#recent-assets tr td,
+#recent-assets tr td:first-child {
+    padding-left: 30px !important;
+    margin-left: 0 !important;
+}
+
+/* Eliminar hover de filas de tablas */
+table tr:hover,
+table tbody tr:hover,
+.data-table tr:hover,
+#recent-assets tr:hover,
+tr.clickable-row:hover {
+    background-color: transparent !important;
+    cursor: default !important;
+}
+
+/* Asegurar que las celdas hijas no tengan efecto hover */
+table tr:hover td,
+.data-table tr:hover td,
+#recent-assets tr:hover td,
+tr.clickable-row:hover td {
+    background-color: transparent !important;
+}

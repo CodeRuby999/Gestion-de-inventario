@@ -10,13 +10,13 @@ async function handleDelete(assetId) {
     // Manejar la confirmación
     confirmButton.onclick = async function() {
         try {
-            // Obtener activos actuales
+            // Eliminar el activo de Firebase
+            const db = firebase.firestore();
+            await db.collection('assets').doc(assetId).delete();
+            
+            // También eliminar de localStorage para mantener sincronización
             let assets = JSON.parse(localStorage.getItem('assets') || '[]');
-            
-            // Eliminar el activo
             assets = assets.filter(asset => asset.id !== assetId);
-            
-            // Guardar los cambios
             localStorage.setItem('assets', JSON.stringify(assets));
             
             // Ocultar el modal
@@ -25,17 +25,17 @@ async function handleDelete(assetId) {
             // Determinar si estamos en la página de gestión
             const isManagePage = window.location.pathname.includes('assets.html');
             
-            // Actualizar la tabla con el parámetro correcto
+            // Actualizar la tabla
             updateAssetsTable(assets, '', '', isManagePage);
             
             // Actualizar las estadísticas
             await updateStatsCards();
 
             // Mostrar mensaje de éxito
-            alert('Activo eliminado exitosamente');
+            alert('Activo eliminado exitosamente de Firebase');
         } catch (error) {
-            console.error('Error:', error);
-            alert('Error al eliminar el activo');
+            console.error('Error al eliminar activo de Firebase:', error);
+            alert('Error al eliminar el activo: ' + error.message);
         }
     };
 
@@ -52,11 +52,14 @@ async function handleDelete(assetId) {
     };
 }
 
-// Función para manejar la edición de activos
+// Función para manejar la edición de activos - expuesta globalmente
 function handleEdit(assetId) {
     // Redirigir a la página de registro con el ID del activo
     window.location.href = `register.html?id=${assetId}`;
 }
+
+// Asegurar que handleEdit esté disponible globalmente
+window.handleEdit = handleEdit;
 
 // Función para cargar los datos del activo en el formulario
 async function loadAssetData(assetId) {
@@ -149,293 +152,395 @@ function normalizeState(estado) {
 }
 
 // Funciones de reportes
-function generateStatusReport() {
-    const assets = JSON.parse(localStorage.getItem('assets')) || [];
-    const statusCount = {};
-
-    // Contar activos por estado
-    assets.forEach(asset => {
-        const estado = asset.estado || 'No definido';
-        statusCount[estado] = (statusCount[estado] || 0) + 1;
-    });
-
-    // Generar tabla HTML
-    let html = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Estado</th>
-                    <th>Cantidad</th>
-                    <th>Porcentaje</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    const total = assets.length;
-    for (const estado in statusCount) {
-        const count = statusCount[estado];
-        const percentage = ((count / total) * 100).toFixed(1);
-        html += `
-            <tr>
-                <td><span class="${getBadgeClass(estado)}">${estado}</span></td>
-                <td>${count}</td>
-                <td>${percentage}%</td>
-            </tr>
-        `;
-    }
-
-    html += `
-            <tr class="total-row">
-                <td>Total</td>
-                <td>${total}</td>
-                <td>100%</td>
-            </tr>
-        </tbody>
-    </table>
-    `;
-
-    showReport('Reporte por Estado', html);
-}
-
-function generateTypeReport() {
-    const assets = JSON.parse(localStorage.getItem('assets')) || [];
-    const typeCount = {};
-
-    // Contar activos por tipo
-    assets.forEach(asset => {
-        const tipo = asset.tipo || 'No definido';
-        typeCount[tipo] = (typeCount[tipo] || 0) + 1;
-    });
-
-    // Generar tabla HTML
-    let html = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Cantidad</th>
-                    <th>Porcentaje</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    const total = assets.length;
-    for (const tipo in typeCount) {
-        const count = typeCount[tipo];
-        const percentage = ((count / total) * 100).toFixed(1);
-        html += `
-            <tr>
-                <td>${tipo}</td>
-                <td>${count}</td>
-                <td>${percentage}%</td>
-            </tr>
-        `;
-    }
-
-    html += `
-            <tr class="total-row">
-                <td>Total</td>
-                <td>${total}</td>
-                <td>100%</td>
-            </tr>
-        </tbody>
-    </table>
-    `;
-
-    showReport('Reporte por Tipo', html);
-}
-
-function generateAssignmentReport() {
-    const assets = JSON.parse(localStorage.getItem('assets')) || [];
-    const assignmentCount = {
-        'Asignados': 0,
-        'No Asignados': 0
-    };
-
-    // Contar activos asignados y no asignados basado en el estado
-    assets.forEach(asset => {
-        const estado = (asset.estado || '').toLowerCase();
-        if (estado === 'asignado') {
-            assignmentCount['Asignados']++;
-        } else if (estado === 'disponible' || estado === 'fueradeuso') {
-            assignmentCount['No Asignados']++;
+async function generateStatusReport() {
+    console.log('[generateStatusReport] Ejecutando...');
+    console.log('[generateStatusReport] Iniciando generación de reporte por estado...');
+    try {
+        // Obtener activos desde Firebase usando la función fetchAssets
+        const assets = await fetchAssets();
+        const statusCount = {};
+        if (!assets || assets.length === 0) {
+            showReport('Reporte por Estado', '<div style="padding:2em;text-align:center;color:#d32f2f;font-weight:bold;">No hay datos de activos registrados en el sistema.</div>');
+            return;
         }
-    });
 
-    // Generar tabla HTML
-    let html = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Estado de Asignación</th>
-                    <th>Cantidad</th>
-                    <th>Porcentaje</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+        // Contar activos por estado
+        assets.forEach(asset => {
+            const estado = asset.estado || 'No definido';
+            statusCount[estado] = (statusCount[estado] || 0) + 1;
+        });
 
-    const total = assets.length;
-    for (const status in assignmentCount) {
-        const count = assignmentCount[status];
-        const percentage = ((count / total) * 100).toFixed(1);
-        html += `
-            <tr>
-                <td>${status}</td>
-                <td>${count}</td>
-                <td>${percentage}%</td>
-            </tr>
+        // Generar tabla HTML
+        let html = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Estado</th>
+                        <th>Cantidad</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
+
+        const total = assets.length;
+        for (const estado in statusCount) {
+            const count = statusCount[estado];
+            const percentage = ((count / total) * 100).toFixed(1);
+            html += `
+                <tr>
+                    <td><span class="${getBadgeClass(estado)}">${estado}</span></td>
+                    <td>${count}</td>
+                    <td>${percentage}%</td>
+                </tr>
+            `;
+        }
+
+        html += `
+                <tr class="total-row">
+                    <td>Total</td>
+                    <td>${total}</td>
+                    <td>100%</td>
+                </tr>
+            </tbody>
+        </table>
+        `;
+
+        showReport('Reporte por Estado', html);
+        console.log('[generateStatusReport] showReport llamado.');
+        
+        // Formatear badges después de mostrar el reporte
+        setTimeout(() => {
+            formatBadgeText();
+        }, 100);
+    } catch (error) {
+        console.error('Error al generar reporte por estado:', error);
+        alert('Error al generar el reporte por estado. Intente de nuevo más tarde.'); // Se mantiene para errores reales
     }
+}
+window.generateStatusReport = generateStatusReport;
 
-    html += `
-            <tr class="total-row">
-                <td>Total</td>
-                <td>${total}</td>
-                <td>100%</td>
-            </tr>
-        </tbody>
-    </table>
-    `;
+async function generateTypeReport() {
+    console.log('[generateTypeReport] Ejecutando...');
+    console.log('[generateTypeReport] Iniciando generación de reporte por tipo...');
+    try {
+        // Obtener activos desde Firebase usando la función fetchAssets
+        const assets = await fetchAssets();
+        const typeCount = {};
+        if (!assets || assets.length === 0) {
+            showReport('Reporte por Tipo', '<div style="padding:2em;text-align:center;color:#d32f2f;font-weight:bold;">No hay datos de activos registrados en el sistema.</div>');
+            return;
+        }
 
-    showReport('Reporte de Asignaciones', html);
+        // Contar activos por tipo
+        assets.forEach(asset => {
+            const tipo = asset.tipo || 'No definido';
+            typeCount[tipo] = (typeCount[tipo] || 0) + 1;
+        });
+
+        // Generar tabla HTML
+        let html = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        const total = assets.length;
+        for (const tipo in typeCount) {
+            const count = typeCount[tipo];
+            const percentage = ((count / total) * 100).toFixed(1);
+            html += `
+                <tr>
+                    <td>${tipo}</td>
+                    <td>${count}</td>
+                    <td>${percentage}%</td>
+                </tr>
+            `;
+        }
+
+        html += `
+                <tr class="total-row">
+                    <td>Total</td>
+                    <td>${total}</td>
+                    <td>100%</td>
+                </tr>
+            </tbody>
+        </table>
+        `;
+
+        showReport('Reporte por Tipo', html);
+        console.log('[generateTypeReport] showReport llamado.');
+    } catch (error) {
+        console.error('Error al generar reporte por tipo:', error);
+        alert('Error al generar el reporte por tipo. Intente de nuevo más tarde.'); // Se mantiene para errores reales
+    }
+}
+window.generateTypeReport = generateTypeReport;
+
+async function generateAssignmentReport() {
+    console.log('[generateAssignmentReport] Ejecutando...');
+    console.log('[generateAssignmentReport] Iniciando generación de reporte de asignaciones...');
+    try {
+        // Obtener activos desde Firebase usando la función fetchAssets
+        const assets = await fetchAssets();
+        if (!assets || assets.length === 0) {
+            showReport('Reporte de Asignaciones', '<div style="padding:2em;text-align:center;color:#d32f2f;font-weight:bold;">No hay datos de activos registrados en el sistema.</div>');
+            return;
+        }
+        const assignmentCount = {
+            'Asignados': 0,
+            'No Asignados': 0
+        };
+
+
+        // Contar activos asignados y no asignados basado en el estado
+        assets.forEach(asset => {
+            const estado = (asset.estado || '').toLowerCase();
+            if (estado === 'asignado') {
+                assignmentCount['Asignados']++;
+            } else if (estado === 'disponible' || estado === 'fueradeuso') {
+                assignmentCount['No Asignados']++;
+            }
+        });
+
+        // Generar tabla HTML
+        let html = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Estado de Asignación</th>
+                        <th>Cantidad</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        const total = assets.length;
+        for (const status in assignmentCount) {
+            const count = assignmentCount[status];
+            const percentage = ((count / total) * 100).toFixed(1);
+            html += `
+                <tr>
+                    <td>${status}</td>
+                    <td>${count}</td>
+                    <td>${percentage}%</td>
+                </tr>
+            `;
+        }
+
+        html += `
+                <tr class="total-row">
+                    <td>Total</td>
+                    <td>${total}</td>
+                    <td>100%</td>
+                </tr>
+            </tbody>
+        </table>
+        `;
+
+        showReport('Reporte de Asignaciones', html);
+        console.log('[generateAssignmentReport] showReport llamado.');
+    } catch (error) {
+        console.error('Error al generar reporte de asignaciones:', error);
+        alert('Error al generar el reporte de asignaciones. Intente de nuevo más tarde.'); // Se mantiene para errores reales
+    }
 }
 
 function showReport(title, content) {
+    console.log('[showReport] Llamado con título:', title);
+    console.log('[showReport] HTML generado:', content);
+
     const container = document.getElementById('reportContainer');
     const titleElement = document.getElementById('reportTitle');
     const contentElement = document.getElementById('reportContent');
 
+    if (!container || !titleElement || !contentElement) {
+        console.error('[showReport] No se encontró el contenedor del reporte.\nTítulo: ' + title + '\nHTML:\n' + content);
+        return;
+    }
     titleElement.textContent = title;
     contentElement.innerHTML = content;
     container.style.display = 'block';
+    // alert('[showReport] Reporte mostrado en pantalla: ' + title); // Eliminado para UX sin interrupciones
 }
-
 // Función para manejar el envío del formulario de registro
 async function handleFormSubmit(event) {
     event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
     
-    // Obtener los datos del formulario
-    const formData = new FormData(event.target);
-    const existingId = document.querySelector('#asset-id')?.value;
-
-    const assetData = {
-        id: existingId || generateAssetId(),
-        tipo: formData.get('asset-type'),
-        nombre: formData.get('name'),
-        serial: formData.get('serial'),
-        marca: formData.get('brand'),
-        modelo: formData.get('model'),
-        fechaCompra: formData.get('purchase-date'),
-        fechaRegistro: existingId ? formData.get('fecha-registro') : new Date().toISOString(),
-        ultimaActualizacion: new Date().toISOString(),
-        estado: normalizeState(formData.get('status')),
-        ubicacion: formData.get('location'),
-        asignadoA: formData.get('assigned-to'),
-        notas: formData.get('notes')
-    };
-
-    console.log('Datos del activo:', assetData); // Para depuración
-
     try {
-        // Obtener activos existentes
-        const assetsJson = localStorage.getItem('assets');
-        console.log('Activos existentes:', assetsJson); // Para depuración
+        // Obtener los datos básicos del formulario
+        const assetType = formData.get('asset-type');
+        const asset = {
+            id: document.getElementById('asset-id')?.value || generateAssetId(),
+            tipo: assetType,
+            nombre: formData.get('name'),
+            serial: formData.get('serial'),
+            marca: formData.get('brand'),
+            modelo: formData.get('model'),
+            fechaCompra: formData.get('purchase-date'),
+            estado: formData.get('status'),
+            ubicacion: formData.get('location'),
+            asignadoA: formData.get('assigned-to'),
+            notas: formData.get('notes'),
+            fechaRegistro: new Date().toISOString()
+        };
         
-        let assets = [];
-        if (assetsJson) {
-            assets = JSON.parse(assetsJson);
-            if (!Array.isArray(assets)) {
-                console.error('Los datos en localStorage no son un array');
-                assets = [];
-            }
+        // Agregar campos específicos según el tipo de activo
+        if (assetType === 'hardware') {
+            asset.procesador = formData.get('processor');
+            asset.memoria = formData.get('memory');
+            asset.almacenamiento = formData.get('storage');
+            asset.garantia = formData.get('warranty');
+        } else if (assetType === 'software') {
+            asset.licencia = formData.get('license-key');
+            asset.fechaExpiracion = formData.get('expiration-date');
+            asset.version = formData.get('version');
+            asset.tipoLicencia = formData.get('license-type');
+        } else if (assetType === 'network') {
+            asset.ip = formData.get('ip-address');
+            asset.mac = formData.get('mac-address');
+            asset.tipoRed = formData.get('network-type');
+            asset.puertos = formData.get('ports');
+        } else if (assetType === 'other') {
+            asset.categoria = formData.get('category');
+            asset.especificaciones = formData.get('specifications');
+        }
+
+        // Verificar si estamos en modo edición o nuevo registro
+        const isEdit = !!document.getElementById('asset-id')?.value;
+        
+        // Obtener referencia a Firestore
+        const db = firebase.firestore();
+        const assetsCollection = db.collection('assets');
+        
+        if (isEdit) {
+            // Actualizar activo existente en Firebase
+            await assetsCollection.doc(asset.id).set(asset);
+        } else {
+            // Agregar nuevo activo a Firebase
+            await assetsCollection.doc(asset.id).set(asset);
         }
         
-        if (existingId) {
-            // Actualizar activo existente
-            const index = assets.findIndex(a => a.id === existingId);
+        // También guardar en localStorage como respaldo para compatibilidad
+        const assets = JSON.parse(localStorage.getItem('assets') || '[]');
+        if (isEdit) {
+            // Actualizar activo existente en localStorage
+            const index = assets.findIndex(a => a.id === asset.id);
             if (index !== -1) {
-                assetData.fechaRegistro = assets[index].fechaRegistro; // Mantener la fecha de registro original
-                assets[index] = assetData;
-                console.log('Activo actualizado:', assetData);
-            } else {
-                console.error('No se encontró el activo a actualizar');
-                return;
+                assets[index] = asset;
             }
         } else {
-            // Agregar nuevo activo al inicio del array
-            assets.unshift(assetData);
-            console.log('Nuevo activo agregado:', assetData);
+            // Agregar nuevo activo a localStorage
+            assets.push(asset);
         }
-        
-        // Guardar en localStorage
         localStorage.setItem('assets', JSON.stringify(assets));
-        console.log('Activos guardados:', assets); // Para depuración
-
-        // Mostrar mensaje de éxito
-        alert(existingId ? 'Activo actualizado exitosamente' : 'Activo registrado exitosamente');
-
-        // Redirigir a la página de gestión
-        window.location.href = 'assets.html';
+        
+        alert(`Activo ${isEdit ? 'actualizado' : 'registrado'} exitosamente en Firebase`);
+        
+        // Redireccionar a la página principal
+        window.location.href = 'index.html';
+        
     } catch (error) {
-        console.error('Error al procesar el activo:', error);
-        alert('Error al procesar el activo. Por favor, intente nuevamente.');
+        console.error('Error al procesar el formulario:', error);
+        alert('Error al guardar en Firebase: ' + error.message);
     }
 }
 
-// Función para obtener los activos
+// Función para obtener los activos desde Firebase
 async function fetchAssets() {
     try {
-        // Obtener activos del localStorage
-        const assetsJson = localStorage.getItem('assets');
-        if (!assetsJson) {
-            console.log('No hay activos registrados');
-            return [];
-        }
-
-        const assets = JSON.parse(assetsJson);
-        console.log('Activos recuperados:', assets); // Para depuración
-        return Array.isArray(assets) ? assets : [];
+        const db = firebase.firestore();
+        const snapshot = await db.collection('assets').get();
+        const assets = [];
+        snapshot.forEach(doc => {
+            assets.push(doc.data());
+        });
+        console.log('[fetchAssets] Activos obtenidos de Firebase:', assets);
+        return assets;
     } catch (error) {
-        console.error('Error al obtener activos:', error);
+        console.error('[fetchAssets] Error al obtener activos desde Firebase:', error);
         return [];
     }
 }
 
-// Función para obtener la clase CSS del badge según el estado
+// Función auxiliar para determinar la clase del badge
 function getBadgeClass(estado) {
-    if (!estado) return 'badge badge-secondary';
-    const estadoLower = estado.toLowerCase();
-    switch (estadoLower) {
-        case 'disponible':
-            return 'badge badge-success';
-        case 'asignado':
-            return 'badge badge-info';
-        case 'mantenimiento':
-            return 'badge badge-warning';
-        case 'fueradeuso':
-            return 'badge badge-danger';
-        default:
-            return 'badge badge-secondary';
+    if (!estado) return 'badge';
+    
+    estado = estado.toLowerCase();
+    switch(estado) {
+        case 'disponible': return 'badge badge-success';
+        case 'asignado': return 'badge badge-info';
+        case 'mantenimiento': return 'badge badge-warning';
+        case 'fuera de uso': 
+        case 'fueradeuso': return 'badge badge-secondary';
+        case 'dañado': 
+        case 'dañado': return 'badge badge-danger';
+        default: return 'badge';
     }
+}
+
+// Función para formatear el texto de los badges de 'fuera de uso'
+function formatBadgeText() {
+    document.querySelectorAll('.badge').forEach(badge => {
+        if (badge.textContent.toLowerCase().trim() === 'fuera de uso') {
+            badge.textContent = 'Fuera de Uso';
+            badge.classList.add('badge-fuera-uso');
+        }
+    });
 }
 
 // Variable para almacenar el ID del activo actual
 let currentAssetId = null;
 
 // Función para mostrar los detalles de un activo
-function showAssetDetails(assetId) {
+async function showAssetDetails(assetId) {
     currentAssetId = assetId;
-    const assets = JSON.parse(localStorage.getItem('assets') || '[]');
-    const asset = assets.find(a => a.id === assetId);
-
-    if (!asset) {
-        console.error('Activo no encontrado');
-        return;
+    
+    try {
+        // Obtener el activo desde Firebase
+        const db = firebase.firestore();
+        const doc = await db.collection('assets').doc(assetId).get();
+        
+        if (!doc.exists) {
+            // Si no está en Firebase, intentar encontrarlo en localStorage
+            const assets = JSON.parse(localStorage.getItem('assets') || '[]');
+            const asset = assets.find(a => a.id === assetId);
+            
+            if (!asset) {
+                console.error('Activo no encontrado');
+                return;
+            }
+            
+            showAssetDetailsInModal(asset);
+        } else {
+            // Si existe en Firebase, usar esos datos
+            const asset = doc.data();
+            showAssetDetailsInModal(asset);
+        }
+    } catch (error) {
+        console.error('Error al obtener detalles del activo:', error);
+        // Intento de respaldo con localStorage
+        const assets = JSON.parse(localStorage.getItem('assets') || '[]');
+        const asset = assets.find(a => a.id === assetId);
+        
+        if (asset) {
+            showAssetDetailsInModal(asset);
+        }
     }
+}
 
+// Función para mostrar los detalles del activo en el modal
+function showAssetDetailsInModal(asset) {
     // Mapear los campos con sus IDs en el modal
     const fieldMappings = {
         'detail-id': asset.id,
@@ -887,7 +992,347 @@ async function handleSearch(event) {
 }
 
 // Inicializar los eventos cuando el DOM esté cargado
-document.addEventListener('DOMContentLoaded', async function() {
+// --- SISTEMA DE USUARIOS Y AUTENTICACIÓN ---
+
+// Guardar usuario logueado en localStorage
+// Eliminado: ahora toda la gestión de usuario se hace con Firebase Auth.
+
+// Eliminado: ahora toda la gestión de usuario se hace con Firebase Auth.
+
+// Nueva función de logout solo con Firebase Auth
+function logoutUser() {
+    firebase.auth().signOut().then(function() {
+        window.location.href = 'login.html';
+    });
+}
+
+// Registrar nuevo usuario
+function registerUser(username, password, role) {
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
+    if (users.find(u => u.username === username)) {
+        return { success: false, message: 'El usuario ya existe.' };
+    }
+    users.push({ username, password, role });
+    localStorage.setItem('users', JSON.stringify(users));
+    return { success: true };
+}
+
+// Login de usuario
+// Eliminado: ahora toda la gestión de usuario se hace con Firebase Auth.
+
+// Proteger páginas que requieren login
+// Nueva función de protección de rutas solo con Firebase Auth
+function requireAuth(roles = []) {
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        // Si se requieren roles, deberías guardar el rol en el perfil de usuario de Firebase
+        // y consultarlo aquí. Por ahora, solo chequea autenticación.
+        return true;
+    });
+}
+// --- GESTIÓN DE USUARIOS Y PERMISOS ---
+function getAllUsers() {
+    return JSON.parse(localStorage.getItem('users') || '[]');
+}
+
+function setAllUsers(users) {
+    localStorage.setItem('users', JSON.stringify(users));
+}
+
+function updateUserRole(username, newRole) {
+    let users = getAllUsers();
+    users = users.map(u => u.username === username ? { ...u, role: newRole } : u);
+    setAllUsers(users);
+}
+
+function setUserBanned(username, banned) {
+    let users = getAllUsers();
+    users = users.map(u => u.username === username ? { ...u, banned: banned } : u);
+    setAllUsers(users);
+}
+
+function deleteUser(username) {
+    let users = getAllUsers();
+    users = users.filter(u => u.username !== username);
+    setAllUsers(users);
+}
+
+function renderUsersTable() {
+    const tableBody = document.querySelector('#users-table tbody');
+    if (!tableBody) return;
+    const users = getAllUsers();
+    const currentUser = getCurrentUser();
+    tableBody.innerHTML = '';
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${user.username}</td>
+            <td>
+                <select class="role-select" data-username="${user.username}" ${currentUser.role !== 'admin' || user.username === currentUser.username ? 'disabled' : ''}>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                    <option value="operario" ${user.role === 'operario' ? 'selected' : ''}>Moderador</option>
+                </select>
+            </td>
+            <td>
+                ${user.banned ? '<span class="badge badge-danger">Baneado</span>' : '<span class="badge badge-success">Activo</span>'}
+            </td>
+            <td>
+                ${currentUser.role === 'admin' && user.username !== currentUser.username ? `<button class="btn btn-outline btn-sm delete-user" data-username="${user.username}"><i class="fas fa-trash"></i></button>` : ''}
+                ${user.role !== 'admin' && user.username !== currentUser.username ?
+                    (user.banned ? `<button class="btn btn-primary btn-sm unban-user" data-username="${user.username}">Desbanear</button>` : `<button class="btn btn-danger btn-sm ban-user" data-username="${user.username}">Banear</button>`) : ''}
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
+    // Eventos para cambio de rol
+    document.querySelectorAll('.role-select').forEach(sel => {
+        sel.addEventListener('change', function() {
+            const username = this.getAttribute('data-username');
+            const newRole = this.value;
+            updateUserRole(username, newRole);
+            renderUsersTable();
+        });
+    });
+    // Eventos para banear/desbanear
+    document.querySelectorAll('.ban-user').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.getAttribute('data-username');
+            setUserBanned(username, true);
+            renderUsersTable();
+        });
+    });
+    document.querySelectorAll('.unban-user').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.getAttribute('data-username');
+            setUserBanned(username, false);
+            renderUsersTable();
+        });
+    });
+    // Eventos para eliminar usuario
+    document.querySelectorAll('.delete-user').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.getAttribute('data-username');
+            if (confirm('¿Seguro que deseas eliminar este usuario?')) {
+                deleteUser(username);
+                renderUsersTable();
+            }
+        });
+    });
+}
+
+// --- EVENTOS DE LOGIN Y REGISTRO ---
+// Función para manejar mensajes de error de Firebase
+function getSignupErrorMessage(errorCode) {
+    switch (errorCode) {
+        case 'auth/email-already-in-use':
+            return 'Ya existe una cuenta con este correo electrónico';
+        case 'auth/invalid-email':
+            return 'Correo electrónico inválido';
+        case 'auth/operation-not-allowed':
+            return 'El registro con correo electrónico no está habilitado';
+        case 'auth/weak-password':
+            return 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres';
+        default:
+            return 'Error al registrar usuario. Por favor, intenta de nuevo.';
+    }
+}
+
+function getErrorMessage(errorCode) {
+    switch (errorCode) {
+        case 'auth/wrong-password':
+            return 'Contraseña incorrecta';
+        case 'auth/user-not-found':
+            return 'No existe una cuenta con este correo';
+        case 'auth/invalid-email':
+            return 'Correo electrónico inválido';
+        default:
+            return 'Error al iniciar sesión. Por favor, intenta de nuevo.';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado');
+    
+    // Mostrar el rol del usuario si estamos en el dashboard
+    const userRoleElement = document.getElementById('user-role');
+    if (userRoleElement) {
+        // Intentar obtener el usuario actual
+        const auth = window.auth;
+        if (auth && auth.currentUser) {
+            userRoleElement.textContent = auth.currentUser.displayName || 'Usuario';
+        } else {
+            userRoleElement.textContent = 'Usuario';
+        }
+    }
+
+    // Manejar el botón de cerrar sesión
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function() {
+            try {
+                const auth = window.auth;
+                if (auth) {
+                    const { signOut } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js');
+                    await signOut(auth);
+                }
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                // Redireccionar de todos modos
+                window.location.href = 'login.html';
+            }
+        });
+    }
+
+    // Login form handling
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            if (!email || !password) {
+                errorDiv.textContent = 'Por favor, complete todos los campos';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            errorDiv.textContent = '';
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const auth = window.auth;
+                const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js');
+                
+                await signInWithEmailAndPassword(auth, email, password);
+                console.log('Login exitoso');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Error durante el login:', error);
+                errorDiv.textContent = getErrorMessage(error.code);
+                errorDiv.classList.remove('hidden');
+            }
+        });
+        return; // No inicializar nada más en login.html
+    }
+
+    // Signup form handling
+    const signupForm = document.getElementById('signup-form');
+    if (signupForm) {
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const role = document.getElementById('signup-role').value;
+            const errorDiv = document.getElementById('signup-error');
+            
+            if (!email || !password || !role) {
+                errorDiv.textContent = 'Por favor, complete todos los campos';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            errorDiv.textContent = '';
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const auth = window.auth;
+                const { createUserWithEmailAndPassword, updateProfile } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js');
+                
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: role });
+                
+                console.log('Usuario registrado exitosamente');
+                window.location.href = 'login.html';
+
+                // Mostrar mensaje de éxito
+                alert('Registro exitoso. Por favor, inicia sesión.');
+            } catch (error) {
+                console.error('Error durante el registro:', error);
+                errorDiv.textContent = getSignupErrorMessage(error.code);
+                errorDiv.classList.remove('hidden');
+            }
+        });
+        return; // No inicializar nada más en signup.html
+    }
+
+    // --- REGISTRO ---
+    const signupForm2 = document.getElementById('signup-form');
+    if (signupForm2) {
+        signupForm2.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const role = document.getElementById('signup-role').value;
+            const result = registerUser(username, password, role);
+            const errorDiv = document.getElementById('signup-error');
+            if (!result.success) {
+                errorDiv.textContent = result.message;
+                errorDiv.classList.remove('hidden');
+            } else {
+                errorDiv.classList.add('hidden');
+                alert('Usuario registrado exitosamente. Ahora puedes iniciar sesión.');
+                window.location.href = 'login.html';
+            }
+        });
+        return; // No inicializar nada más en signup.html
+    }
+
+    // --- PROTECCIÓN Y UI SEGÚN ROL ---
+
+// Función para actualizar la UI según el rol del usuario autenticado
+function updateUIForRole() {
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) return;
+        // El rol se almacena en displayName
+        const role = user.displayName || 'usuario';
+        // Actualizar el texto del encabezado
+        const userRoleElement = document.getElementById('user-role');
+        if (userRoleElement) {
+            userRoleElement.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+        }
+        // Mostrar u ocultar opciones según el rol
+        // Ejemplo: solo admin puede ver la gestión de usuarios
+        const usersMenu = document.getElementById('users-menu');
+        if (usersMenu) {
+            if (role.toLowerCase() === 'admin') {
+                usersMenu.style.display = '';
+            } else {
+                usersMenu.style.display = 'none';
+            }
+        }
+        // Si hay otras opciones avanzadas, ocultarlas para roles básicos
+        const advancedOptions = document.querySelectorAll('.only-admin');
+        advancedOptions.forEach(el => {
+            if (role.toLowerCase() === 'admin') {
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
+        });
+    });
+}
+window.updateUIForRole = updateUIForRole;
+
+    // Proteger páginas principales (excepto login/signup)
+    const path = window.location.pathname;
+    if (!path.includes('login.html') && !path.includes('signup.html')) {
+        requireAuth();
+        updateUIForRole();
+    }
+    // Gestión de usuarios solo para admin
+    if (path.includes('users.html')) {
+        if (!requireAuth(['admin'])) return;
+        renderUsersTable();
+    }
+
     // Inicializar eventos para cerrar el modal de detalles
     const closeButtons = document.querySelectorAll('.close-modal');
     closeButtons.forEach(button => {
@@ -905,97 +1350,101 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     initializeEvents();
 
-    try {
-        // Limpiar la tabla de datos de ejemplo
-        const tbody = document.querySelector('.data-table tbody');
-        if (tbody) {
-            tbody.innerHTML = '';
+    // --- INICIO BLOQUE ASYNC ---
+    (async function() {
+        try {
+            // Limpiar la tabla de datos de ejemplo
+            const tbody = document.querySelector('.data-table tbody');
+            if (tbody) {
+                tbody.innerHTML = '';
+            }
+
+            // Obtener los activos registrados
+            const assets = await fetchAssets();
+
+            // Verificar si estamos en modo edición
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('id');
+            if (editId && window.location.pathname.includes('register.html')) {
+                // Estamos editando un activo existente
+                await loadAssetData(editId);
+                // Cambiar el título del formulario
+                const formTitle = document.querySelector('.page-header h1');
+                if (formTitle) {
+                    formTitle.textContent = 'Editar Activo';
+                }
+                // Cambiar el texto del botón de envío
+                const submitButton = document.querySelector('.register-form button[type="submit"]');
+                if (submitButton) {
+                    submitButton.textContent = 'Actualizar Activo';
+                }
+            }
+
+            const isManagePage = window.location.pathname.includes('assets.html');
+            // Si estamos en la página de gestión
+            if (isManagePage) {
+                // Configurar event listeners para los filtros
+                const typeFilter = document.querySelector('#type-filter');
+                const statusFilter = document.querySelector('#status-filter');
+                const searchInput = document.querySelector('#search-input');
+
+                // Remover event listeners existentes para evitar duplicados
+                if (typeFilter) {
+                    typeFilter.removeEventListener('change', handleTypeFilter);
+                    typeFilter.addEventListener('change', handleTypeFilter);
+                }
+
+                if (statusFilter) {
+                    statusFilter.removeEventListener('change', handleStatusFilter);
+                    statusFilter.addEventListener('change', handleStatusFilter);
+                }
+
+                if (searchInput) {
+                    searchInput.removeEventListener('input', handleSearch);
+                    searchInput.addEventListener('input', handleSearch);
+                }
+
+                console.log('Event listeners configurados');
+                updateAssetsTable(assets, '', '', '', true);
+            }
+            // Si estamos en la página principal
+            else if (document.querySelector('.stats-grid')) {
+                const searchInput = document.querySelector('.search-box input');
+                if (searchInput) {
+                    searchInput.removeEventListener('input', handleSearch);
+                    searchInput.addEventListener('input', handleSearch);
+                }
+                updateAssetsTable(assets, '', '', false);
+                await updateStatsCards();
+            }
+        } catch (error) {
+            console.error('Error al cargar los datos:', error);
         }
 
-        // Obtener los activos registrados
-        const assets = await fetchAssets();
+        // Agregar manejador de eventos para el formulario de registro si estamos en la página de registro
+        const registerForm = document.querySelector('.register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', handleFormSubmit);
 
-        // Verificar si estamos en modo edición
-        const urlParams = new URLSearchParams(window.location.search);
-        const editId = urlParams.get('id');
-        if (editId && window.location.pathname.includes('register.html')) {
-            // Estamos editando un activo existente
-            await loadAssetData(editId);
-            // Cambiar el título del formulario
-            const formTitle = document.querySelector('.page-header h1');
-            if (formTitle) {
-                formTitle.textContent = 'Editar Activo';
-            }
-            // Cambiar el texto del botón de envío
-            const submitButton = document.querySelector('.register-form button[type="submit"]');
-            if (submitButton) {
-                submitButton.textContent = 'Actualizar Activo';
-            }
-        }
-
-        const isManagePage = window.location.pathname.includes('assets.html');
-        // Si estamos en la página de gestión
-        if (isManagePage) {
-            // Configurar event listeners para los filtros
-            const typeFilter = document.querySelector('#type-filter');
-            const statusFilter = document.querySelector('#status-filter');
-            const searchInput = document.querySelector('#search-input');
-
-            // Remover event listeners existentes para evitar duplicados
-            if (typeFilter) {
-                typeFilter.removeEventListener('change', handleTypeFilter);
-                typeFilter.addEventListener('change', handleTypeFilter);
-            }
-
-            if (statusFilter) {
-                statusFilter.removeEventListener('change', handleStatusFilter);
-                statusFilter.addEventListener('change', handleStatusFilter);
-            }
-
-            if (searchInput) {
-                searchInput.removeEventListener('input', handleSearch);
-                searchInput.addEventListener('input', handleSearch);
-            }
-
-            console.log('Event listeners configurados');
-            updateAssetsTable(assets, '', '', '', true);
-        }
-        // Si estamos en la página principal
-        else if (document.querySelector('.stats-grid')) {
-            const searchInput = document.querySelector('.search-box input');
-            if (searchInput) {
-                searchInput.removeEventListener('input', handleSearch);
-                searchInput.addEventListener('input', handleSearch);
-            }
-            updateAssetsTable(assets, '', '', false);
-            await updateStatsCards();
-        }
-    } catch (error) {
-        console.error('Error al cargar los datos:', error);
-    }
-
-    // Agregar manejador de eventos para el formulario de registro si estamos en la página de registro
-    const registerForm = document.querySelector('.register-form');
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleFormSubmit);
-
-        // Manejar la visibilidad de los campos específicos según el tipo de activo
-        const assetTypeSelect = document.getElementById('asset-type');
-        if (assetTypeSelect) {
-            assetTypeSelect.addEventListener('change', function() {
-                const selectedType = this.value;
-                const specificFields = ['hardware-field', 'software-field', 'network-field', 'other-field'];
-                
-                specificFields.forEach(fieldClass => {
-                    const fields = document.querySelectorAll(`.${fieldClass}`);
-                    fields.forEach(field => {
-                        field.classList.toggle('hidden', !fieldClass.startsWith(selectedType));
+            // Manejar la visibilidad de los campos específicos según el tipo de activo
+            const assetTypeSelect = document.getElementById('asset-type');
+            if (assetTypeSelect) {
+                assetTypeSelect.addEventListener('change', function() {
+                    const selectedType = this.value;
+                    const specificFields = ['hardware-field', 'software-field', 'network-field', 'other-field'];
+                    
+                    specificFields.forEach(fieldClass => {
+                        const fields = document.querySelectorAll(`.${fieldClass}`);
+                        fields.forEach(field => {
+                            field.classList.toggle('hidden', !fieldClass.startsWith(selectedType));
+                        });
                     });
                 });
-            });
 
-            // Trigger change event to set initial visibility
-            assetTypeSelect.dispatchEvent(new Event('change'));
+                // Trigger change event to set initial visibility
+                assetTypeSelect.dispatchEvent(new Event('change'));
+            }
         }
-    }
+    })();
+    // --- FIN BLOQUE ASYNC ---
 });

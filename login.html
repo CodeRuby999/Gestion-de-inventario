@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - ITNetgroup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBulqDJunx7mkijQVjTh_WZdMfS9yQGfxI",
+            authDomain: "gestion-de-activos-60f8c.firebaseapp.com",
+            projectId: "gestion-de-activos-60f8c",
+            storageBucket: "gestion-de-activos-60f8c.firebasestorage.app",
+            messagingSenderId: "1024745036309",
+            appId: "1:1024745036309:web:0bfd76401887e548ac8c1c",
+            measurementId: "G-HHRJK85QFM"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    const errorDiv = document.getElementById('login-error');
+                    
+                    // Ocultar mensaje de error
+                    errorDiv.textContent = '';
+                    errorDiv.classList.add('hidden');
+                    
+                    // Iniciar sesión con Firebase
+                    firebase.auth().signInWithEmailAndPassword(email, password)
+                        .then(() => {
+                            // Redirigir al dashboard
+                            window.location.href = 'index.html';
+                        })
+                        .catch((error) => {
+                            console.error('Error de login:', error);
+                            let mensaje = '';
+                            switch (error.code) {
+                                case 'auth/user-not-found':
+                                    mensaje = 'No existe ninguna cuenta con ese correo.';
+                                    break;
+                                case 'auth/wrong-password':
+                                    mensaje = 'La contraseña es incorrecta. Intenta de nuevo.';
+                                    break;
+                                case 'auth/invalid-email':
+                                    mensaje = 'El correo electrónico no es válido.';
+                                    break;
+                                case 'auth/user-disabled':
+                                    mensaje = 'Esta cuenta ha sido deshabilitada. Contacta al administrador.';
+                                    break;
+                                default:
+                                    mensaje = 'Error al iniciar sesión. Por favor verifica tus datos.';
+                                    break;
+                            }
+                            errorDiv.textContent = mensaje;
+                            errorDiv.classList.remove('hidden');
+                        });
+                });
+            }
+            
+
+        });
+    </script>
+</head>
+<body>
+    <main class="main">
+        <div class="container auth-container">
+            <div class="card form-card auth-card">
+                <div class="card-header">
+                    <h2>Iniciar Sesión</h2>
+                    <p>Accede a tu cuenta para continuar</p>
+                </div>
+                <div class="card-content">
+                    <form class="auth-form" id="login-form">
+                        <div class="form-group">
+                            <label for="login-email">Correo Electrónico</label>
+                            <input type="email" id="login-email" name="email" placeholder="Tu correo electrónico" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Contraseña</label>
+                            <input type="password" id="login-password" name="password" placeholder="Contraseña" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+                        <div class="auth-link">
+                            <span>¿No tienes cuenta?</span> <a href="signup.html">Regístrate</a>
+                        </div>
+                        <div id="login-error" class="auth-error hidden"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

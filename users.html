@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - ITNetgroup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">ITNetgroup</a>
+                </div>
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="index.html">Dashboard</a></li>
+                        <li><a href="assets.html">Activos</a></li>
+                        <li><a href="register.html">Registrar</a></li>
+                        <li><a href="reports.html">Reportes</a></li>
+                        <li><a href="users.html" class="active">Usuarios</a></li>
+                    </ul>
+                </nav>
+                <div class="header-actions"></div>
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1>Gestión de Usuarios</h1>
+                <p>Administra los usuarios, roles y permisos del sistema</p>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Usuarios Registrados</h2>
+                </div>
+                <div class="card-content">
+                    <table class="data-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Usuarios serán listados aquí por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

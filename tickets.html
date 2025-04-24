@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=428, initial-scale=1.0">
+  <title>Gestión de Tickets con Firebase</title>
+  <link rel="stylesheet" href="tickets.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
+  
+</head>
+<body>
+
+  <h1>Gestión de Tickets</h1>
+
+  <!-- FILTROS -->
+  <div class="filtros">
+    <select id="filtro-estado">
+      <option value="">Estado</option>
+      <option>Por hacer</option>
+      <option>En proceso</option>
+      <option>Terminado</option>
+    </select>
+    <input type="text" id="filtro-responsable" placeholder="Responsable">
+    <input type="text" id="filtro-categoria" placeholder="Categoría">
+    <button onclick="aplicarFiltros()">Filtrar</button>
+    <button onclick="resetFiltros()">Limpiar</button>
+  </div>
+
+  <!-- TARJETAS -->
+  <div class="ticket-container" id="ticket-container"></div>
+
+  <!-- FORMULARIO -->
+  <form id="form-ticket">
+    <h2>Nuevo Ticket</h2>
+    <input type="text" id="titulo" placeholder="Título" required>
+    <input type="text" id="responsable" placeholder="Responsable" required>
+    <select id="estado">
+      <option>Por hacer</option>
+      <option>En proceso</option>
+      <option>Terminado</option>
+    </select>
+    <input type="text" id="categoria" placeholder="Categoría" required>
+    <button type="submit">Agregar Ticket</button>
+  </form>
+
+  <script src="tickets.js"></script>
+</body>
+</html>

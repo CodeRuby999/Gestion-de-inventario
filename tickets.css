@@ -1,0 +1,82 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f6f8;
+    padding: 2rem;
+    max-width: 900px;
+    margin: auto;
+  }
+  
+  h1, h2 {
+    text-align: center;
+  }
+  
+  .ticket-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .ticket {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    padding: 1.5rem;
+    transition: transform 0.2s ease;
+  }
+  
+  .ticket:hover {
+    transform: translateY(-5px);
+  }
+  
+  .ticket-header {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    display: inline-block;
+  }
+  
+  .urgent { background: #ffcccc; color: #b30000; }
+  .in-progress { background: #fff4cc; color: #997a00; }
+  .done { background: #d4f4dd; color: #26734d; }
+  
+  .tag {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    background-color: #e0e0e0;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+  }
+  
+  .btn-estado {
+    margin-top: 1rem;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-estado:hover {
+    background-color: #357ab8;
+  }
+  
+  form, .filtros {
+    background: #fff;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  
+  input, select, button {
+    margin: 0.5rem 0.3rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  
